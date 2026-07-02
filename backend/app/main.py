@@ -3,7 +3,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import Dict, Any, List
-import yfinance as yf
+
 
 from app.config import settings
 from app.db import db
@@ -848,9 +848,70 @@ def get_debug_stock(ticker: str):
             "macd": indicators.get("macd", "Neutral"),
             "volume_surge": float(indicators.get("volume_surge", 1.0)),
             "breakout_detected": bool(indicators.get("breakout_detected", False)),
-            "data_source": "yfinance",
+            "data_source": "upstox",
             "fallback_used": bool(mdata.get("fallback_used", False))
         }
     except Exception as e:
         logger.error(f"Error in debug stock endpoint for {ticker_upper}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/upstox/technical-diagnostics", tags=["Debug Feed"])
+def get_technical_diagnostics(ticker: str = "GREENPOWER"):
+    """
+    Diagnostics endpoint returning calculated indicators and raw candle details.
+    """
+    ticker_upper = ticker.upper().strip()
+    try:
+        from app.data_sources.market_data import get_market_data
+        from app.services.technical_indicators import compute_local_indicators
+        
+        mdata = get_market_data(ticker_upper)
+        
+        # Get candles count and dates
+        history_close = mdata.get("history_close", [])
+        history_high = mdata.get("history_high", [])
+        history_low = mdata.get("history_low", [])
+        history_volume = mdata.get("history_volume", [])
+        history_dates = mdata.get("history_dates", [])
+        
+        indicators = compute_local_indicators(
+            history_close=history_close,
+            history_high=history_high,
+            history_low=history_low,
+            history_volume=history_volume
+        )
+        
+        return {
+            "ticker": ticker_upper,
+            "raw_candle_count": len(history_close),
+            "date_range": {
+                "start": history_dates[0] if history_dates else None,
+                "end": history_dates[-1] if history_dates else None
+            },
+            "ema20": indicators["ema20"],
+            "ema50": indicators["ema50"],
+            "rsi": indicators["rsi"],
+            "macd": {
+                "macd_val": indicators["macd_val"],
+                "signal_val": indicators["signal_val"],
+                "macd_desc": indicators["macd_desc"]
+            },
+            "atr": indicators["atr"],
+            "bollinger_bands": {
+                "upper": indicators["bollinger_upper"],
+                "middle": indicators["bollinger_middle"],
+                "lower": indicators["bollinger_lower"]
+            },
+            "support": indicators["support"],
+            "resistance": indicators["resistance"],
+            "volume_analysis": {
+                "volume_surge": indicators["volume_surge"],
+                "average_volume": indicators["average_volume"],
+                "latest_volume": indicators["latest_volume"]
+            },
+            "fallback_used": mdata.get("fallback_used", False)
+        }
+    except Exception as e:
+        logger.error(f"Error in technical diagnostics endpoint for {ticker_upper}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+

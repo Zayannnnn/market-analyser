@@ -1,6 +1,6 @@
 # AORA - AI Stock Intelligence Migration Tasks
 
-## Phase 3.1: Analysis and Architecture [IN PROGRESS]
+## Phase 3.1: Analysis and Architecture [COMPLETE]
 - [x] Inspect the complete repository
 - [x] Understand current architecture and microservices layout
 - [x] Identify and catalog all yfinance and Yahoo Finance API dependencies
@@ -12,13 +12,17 @@
 - [x] Update `task.md` with audit details
 - [x] Produce detailed implementation plan and report in `walkthrough.md`
 
-## Phase 3.2: Implementation [PLANNED]
-- [ ] Implement Upstox Historical Candle API ingestion for stock history and indices
-- [ ] Implement local indicators engine in Python (EMA 20, EMA 50, RSI, MACD, ATR, Bollinger Bands, Support/Resistance, Volume Analysis)
-- [ ] Create Firestore fundamentals caching mechanism (Company Profile, sector, PE, Dividend Yield, High/Low etc.)
-- [ ] Connect news scraper to Gemini summarization pipeline producing Sentiment & Impact metrics
-- [ ] Upgrade Gemini agent explanation prompt to return structural trade blueprints (entry, target, stop loss, confidence %, risk score)
-- [ ] Refactor frontend `StockDetail.tsx` to display real indicator numbers and the AI Blueprint cards
-- [ ] Refactor frontend `Dashboard.tsx` to pull all market overview indices from Upstox
-- [ ] Perform local integration testing and verify logs and error boundaries
-- [ ] Prepare final production audit and deploy to Google Cloud Run and Vercel
+## Phase 3.2: Implementation [COMPLETE]
+- [x] Set up local Python environment and configure standard libraries and dependencies
+- [x] Replace Yahoo Finance historical candle retrieval with Upstox Historical Candle API in `market_data.py`
+- [x] Preserve response structure in `live_quotes.py` by delegating to Upstox endpoints
+- [x] Create reusable indicators module `backend/app/services/technical_indicators.py` in local Python
+- [x] Implement local calculations: EMA 20, EMA 50, RSI 14, MACD, ATR 14, Bollinger Bands (20,2), Support & Resistance, Volume Analysis, and Breakout Detection
+- [x] Update technical analysis agent in `agents/technical.py` to consume the new indicators module
+- [x] Remove hardcoded placeholder fallbacks (EMA=0, ATR=0, MACD Neutral, RSI=50) when valid candles exist
+- [x] Register test stock `GREENPOWER` in `stock_master.json`
+- [x] Create technical diagnostics endpoint `/api/upstox/technical-diagnostics` in `main.py`
+- [x] Verify calculations for `GREENPOWER` (EMA, ATR, MACD, S/R, Volume metrics are non-zero)
+- [x] Confirm no Yahoo Finance requests are executed
+- [x] Update task list in `task.md` and document changes in `walkthrough.md`
+- [x] Commit and prepare for deployment

@@ -149,5 +149,11 @@
     "companyName": "Coal India Ltd",
     "providerTicker": "COALINDIA.NS",
     "sector": "Energy"
+  },
+  {
+    "ticker": "GREENPOWER",
+    "companyName": "Orient Green Power Co Ltd",
+    "providerTicker": "GREENPOWER.NS",
+    "sector": "Utilities"
   }
 ]
