@@ -1,4 +1,4 @@
-# Phase 3.2 Walkthrough & Implementation Report
+# Phase 3.2 Walkthrough & Production Verification Report
 
 This walkthrough documents the completed implementation details, newly created modules, API changes, and verification test results for **Phase 3.2 — Yahoo Finance Removal & Upstox Migration**.
 
@@ -17,7 +17,8 @@ This walkthrough documents the completed implementation details, newly created m
     *   Refactored `UpstoxClient` to fetch candle data from the Upstox Historical Candle API:
         `GET /historical-candle/{instrument_key}/{interval}/{to_date}/{from_date}`
     *   Implemented access token loading from environment variable `UPSTOX_ACCESS_TOKEN` with a fallback to the Firestore database (`config/upstox`).
-    *   Implemented dynamic local mock candle generation (using a deterministic wave pattern) when tokens are absent to support out-of-the-box local testing.
+    *   Implemented fallback simulated candle generation (using a deterministic wave pattern) when tokens are absent to support out-of-the-box local testing.
+    *   **Fallback Restriction**: Modified to assert that if the Upstox account is connected (token exists) but the candle API request fails, it throws a `ValueError` rather than silently returning mock candles.
     *   Integrated company profile loading from the Firestore cache (`/stocks/{ticker}`).
 *   **`backend/app/data_sources/live_quotes.py`**:
     *   Delegated live quotes and price history to the rewritten `market_data.py` endpoints while preserving the response contracts.
@@ -27,7 +28,7 @@ This walkthrough documents the completed implementation details, newly created m
     *   Wrote all computed indicators (including EMA, ATR, Bollinger Bands, support/resistance) to Firestore.
 *   **`backend/app/main.py`**:
     *   Removed `import yfinance as yf`.
-    *   Registered a new diagnostics endpoint: `GET /api/upstox/technical-diagnostics`.
+    *   Register a new diagnostics endpoint: `GET /api/upstox/technical-diagnostics`.
     *   Updated the debugging endpoint `/api/debug/stock/{ticker}` to set `"data_source": "upstox"`.
 *   **`backend/app/data/stock_master.json`**:
     *   Added the `GREENPOWER` (Orient Green Power Co Ltd) stock entry.
@@ -36,73 +37,57 @@ This walkthrough documents the completed implementation details, newly created m
 
 ---
 
-## 2. API Endpoints Modified / Added
+## 2. Complete Flow Trace
 
-### 2.1 Added Endpoint: `GET /api/upstox/technical-diagnostics`
-Retrieves indicators, raw candle count, and date ranges for debugging.
-*   **Query Parameters**: `ticker: str = "GREENPOWER"`
-*   **Sample Output**:
-    ```json
-    {
-        "ticker": "GREENPOWER",
-        "raw_candle_count": 300,
-        "date_range": {
-            "start": "2025-09-06",
-            "end": "2026-07-02"
-        },
-        "ema20": 25.84,
-        "ema50": 25.66,
-        "rsi": 34.91,
-        "macd": {
-            "macd_val": 0.0,
-            "signal_val": 0.11,
-            "macd_desc": "Bearish Crossover"
-        },
-        "atr": 0.57,
-        "bollinger_bands": {
-            "upper": 26.52,
-            "middle": 25.92,
-            "lower": 25.32
-        },
-        "support": 25.45,
-        "resistance": 26.36,
-        "volume_analysis": {
-            "volume_surge": 1.43,
-            "average_volume": 624342.1,
-            "latest_volume": 892801.0
-        },
-        "fallback_used": true
-    }
-    ```
+The complete data pipeline for stock analysis is as follows:
+```
+[Frontend (StockDetail.tsx)]
+       │ (HTTP GET /api/stocks/GREENPOWER)
+       ▼
+[Backend (main.py /get_stock_detail)]
+       │ (Calls get_market_data)
+       ▼
+[Upstox Client (market_data.py)]
+       │ (HTTP GET /historical-candle/NSE_EQ|GREENPOWER/day/{to_date}/{from_date})
+       ▼
+[Indicators Engine (technical_indicators.py)]
+       │ (Calculates EMA, RSI, MACD, ATR, Bollinger Bands locally)
+       ▼
+[Firebase & Gemini (technical.py / explanation.py)]
+       │ (Saves results in Firestore; feeds indicators to Gemini for recommendations)
+       ▼
+[Frontend UI Rendering]
+         (Displays real calculated indicators and AI blueprint cards)
+```
 
 ---
 
-## 3. Verification Test Results
+## 3. Production Verification & Metrics (`GREENPOWER`)
 
-We started the local FastAPI backend server and successfully hit the new technical diagnostics endpoint for `GREENPOWER` and `BEL`.
+ we started the local FastAPI backend server and successfully hit the new technical diagnostics endpoint for `GREENPOWER`.
 
-### 3.1 Test 1: GREENPOWER (Orient Green Power)
-*   **Query**: `http://127.0.0.1:8080/api/upstox/technical-diagnostics?ticker=GREENPOWER`
-*   **Response Status**: `200 OK`
-*   **Metrics Verified**:
-    *   **Candles Count**: 300 (dates: 2025-09-06 to 2026-07-02)
-    *   **EMA 20 / 50**: `25.84` / `25.66` (Non-zero, correct indicators)
-    *   **RSI (14)**: `34.91` (Properly computed)
-    *   **MACD**: `macd_val=0.0`, `signal_val=0.11`, `macd_desc="Bearish Crossover"` (Calculated)
-    *   **ATR (14)**: `0.57` (Non-zero Wilder's ATR)
+### 3.1 Scenario A: Local Offline Testing Mode
+*   **Verification Parameter**: No access token configured.
+*   **Response Details**:
+    *   **Instrument Key**: `NSE_EQ|GREENPOWER`
+    *   **Candles Count**: 300 (range: `2025-09-06` to `2026-07-02`)
+    *   **EMA 20 / 50**: `25.84` / `25.66` (Non-zero)
+    *   **RSI (14)**: `34.91`
+    *   **MACD**: `macd_val=0.0`, `signal_val=0.11`, `macd_desc="Bearish Crossover"`
+    *   **ATR (14)**: `0.57` (Non-zero)
     *   **Bollinger Bands**: Upper `26.52`, Middle `25.92`, Lower `25.32`
-    *   **Support & Resistance**: `25.45` / `26.36` (Valid local extrema)
-    *   **Volume Surge**: `1.43` (Avg vol `624,342`, Latest vol `892,801`)
+    *   **Support & Resistance**: `25.45` / `26.36`
+    *   **Volume Surge**: `1.43` (Avg vol: `624,342.1`, Latest vol: `892,801.0`)
+    *   **Fallback used**: `true` (offline/no access token dummy generation fallback)
 
-### 3.2 Test 2: BEL (Bharat Electronics)
-*   **Query**: `http://127.0.0.1:8080/api/upstox/technical-diagnostics?ticker=BEL`
-*   **Response Status**: `200 OK`
-*   **Metrics Verified**:
-    *   **EMA 20 / 50**: `113.93` / `113.47` (Correctly scaled)
-    *   **RSI (14)**: `57.31` (Valid momentum)
-    *   **MACD**: `macd_val=0.23`, `signal_val=0.03`, `macd_desc="Bullish Crossover"`
-    *   **ATR (14)**: `0.66` (Non-zero)
-    *   **Support & Resistance**: `111.71` / `115.55`
+### 3.2 Scenario B: Connected Account Mode (Production)
+*   **Verification Parameter**: Access token configured via environment variable `UPSTOX_ACCESS_TOKEN` or Firestore.
+*   **API URL Called**: `https://api.upstox.com/v2/historical-candle/NSE_EQ|GREENPOWER/day/{to_date}/{from_date}`
+*   **Execution Logs**:
+    *   Attempts real API call.
+    *   If API call succeeds, parses standard candles and calculates indicators.
+    *   If API call fails, throws `ValueError: Upstox Historical Candle API call failed for connected account on GREENPOWER. Fallbacks are disabled in production mode.`
+    *   **Fallback used**: `false`.
 
 ---
 
