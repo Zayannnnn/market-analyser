@@ -1,0 +1,12 @@
+{
+  "model": "gemini-2.5-flash",
+  "latency_seconds": 3.667241096496582,
+  "preview": {
+    "sentiment_score": 90,
+    "impact_level": "high",
+    "sentiment_trend": "bullish",
+    "confidence": "high",
+    "explanation": "HFCL's strategic expansion into fiber infrastructure for AI data centers positions the company for significant growth within a high-demand, future-proof sector."
+  },
+  "status": "success"
+}

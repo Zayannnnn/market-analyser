@@ -1,0 +1,262 @@
+[
+  {
+    "volume": 15657862.0,
+    "unified_score": 67,
+    "daily_change": -8.386117558270387,
+    "market_cap": 0.0,
+    "company_name": "TCS Limited",
+    "pe_ratio": 0.0,
+    "current_price": 2241.7,
+    "quality_score": 75.0,
+    "avg_volume": 5656152.45,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 2.77,
+      "breakout_detected": false,
+      "sma200": 2751.85,
+      "sma50": 2414.87,
+      "rsi": 60.66
+    },
+    "ticker": "TCS",
+    "subscores": {
+      "news_impact": 63.5,
+      "technical_strength": 55.0,
+      "volume_momentum": 100.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 18530359.0,
+    "unified_score": 65,
+    "daily_change": -3.7928900673692154,
+    "market_cap": 0.0,
+    "company_name": "INFY Limited",
+    "pe_ratio": 0.0,
+    "current_price": 1222.6,
+    "quality_score": 75.0,
+    "avg_volume": 16321254.05,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 1.14,
+      "breakout_detected": false,
+      "sma200": 1394.54,
+      "sma50": 1222.11,
+      "rsi": 65.77
+    },
+    "ticker": "INFY",
+    "subscores": {
+      "news_impact": 80.0,
+      "technical_strength": 70.0,
+      "volume_momentum": 32.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 62142748.0,
+    "unified_score": 62,
+    "daily_change": -2.735415763469571,
+    "market_cap": 0.0,
+    "company_name": "WIPRO Limited",
+    "pe_ratio": 0.0,
+    "current_price": 204.1,
+    "quality_score": 75.0,
+    "avg_volume": 30460198.15,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 2.04,
+      "breakout_detected": false,
+      "sma200": 221.57,
+      "sma50": 199.26,
+      "rsi": 65.07
+    },
+    "ticker": "WIPRO",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 70.0,
+      "volume_momentum": 77.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 170122103.0,
+    "unified_score": 54,
+    "daily_change": 3.887120001224241,
+    "market_cap": 0.0,
+    "company_name": "NHPC Limited",
+    "pe_ratio": 0.0,
+    "current_price": 75.1,
+    "quality_score": 75.0,
+    "avg_volume": 33100885.8,
+    "technical_indicators": {
+      "macd": "Bearish Trend",
+      "volume_surge": 5.14,
+      "breakout_detected": false,
+      "sma200": 78.11,
+      "sma50": 79.14,
+      "rsi": 31.01
+    },
+    "ticker": "NHPC",
+    "subscores": {
+      "news_impact": 56.7,
+      "technical_strength": 20.0,
+      "volume_momentum": 100.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 1872489.0,
+    "unified_score": 51,
+    "daily_change": -1.1922293361002934,
+    "market_cap": 0.0,
+    "company_name": "LT Limited",
+    "pe_ratio": 0.0,
+    "current_price": 3953.2,
+    "quality_score": 75.0,
+    "avg_volume": 2035757.9,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 0.92,
+      "breakout_detected": false,
+      "sma200": 3968.13,
+      "sma50": 3916.12,
+      "rsi": 52.16
+    },
+    "ticker": "LT",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 70.0,
+      "volume_momentum": 21.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 2967516.0,
+    "unified_score": 50,
+    "daily_change": -0.5896941306144969,
+    "market_cap": 0.0,
+    "company_name": "ADANIPORTS Limited",
+    "pe_ratio": 0.0,
+    "current_price": 1803.8,
+    "quality_score": 75.0,
+    "avg_volume": 2623635.25,
+    "technical_indicators": {
+      "macd": "Bearish Trend",
+      "volume_surge": 1.13,
+      "breakout_detected": false,
+      "sma200": 1532.4,
+      "sma50": 1621.84,
+      "rsi": 64.0
+    },
+    "ticker": "ADANIPORTS",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 60.0,
+      "volume_momentum": 31.5,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 15289610.0,
+    "unified_score": 50,
+    "daily_change": 0.031770857874568605,
+    "market_cap": 0.0,
+    "company_name": "COALINDIA Limited",
+    "pe_ratio": 0.0,
+    "current_price": 472.3,
+    "quality_score": 75.0,
+    "avg_volume": 22397227.5,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 0.68,
+      "breakout_detected": false,
+      "sma200": 435.27,
+      "sma50": 457.34,
+      "rsi": 59.64
+    },
+    "ticker": "COALINDIA",
+    "subscores": {
+      "news_impact": 47.5,
+      "technical_strength": 80.0,
+      "volume_momentum": 9.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 27944438.0,
+    "unified_score": 47,
+    "daily_change": 1.4425312532020138,
+    "market_cap": 0.0,
+    "company_name": "SBIN Limited",
+    "pe_ratio": 0.0,
+    "current_price": 970.45,
+    "quality_score": 75.0,
+    "avg_volume": 18792060.35,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 1.49,
+      "breakout_detected": false,
+      "sma200": 1047.61,
+      "sma50": 1026.36,
+      "rsi": 36.0
+    },
+    "ticker": "SBIN",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 40.0,
+      "volume_momentum": 49.5,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 38341127.0,
+    "unified_score": 46,
+    "daily_change": 2.145954547297572,
+    "market_cap": 0.0,
+    "company_name": "CANBK Limited",
+    "pe_ratio": 0.0,
+    "current_price": 131.85,
+    "quality_score": 75.0,
+    "avg_volume": 28538188.0,
+    "technical_indicators": {
+      "macd": "Bullish Trend",
+      "volume_surge": 1.34,
+      "breakout_detected": false,
+      "sma200": 142.91,
+      "sma50": 133.9,
+      "rsi": 43.47
+    },
+    "ticker": "CANBK",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 40.0,
+      "volume_momentum": 42.0,
+      "company_quality": 55.0
+    }
+  },
+  {
+    "volume": 226112091.0,
+    "unified_score": 46,
+    "daily_change": 1.7904172352805374,
+    "market_cap": 0.0,
+    "company_name": "JPPOWER Limited",
+    "pe_ratio": 0.0,
+    "current_price": 19.33,
+    "quality_score": 75.0,
+    "avg_volume": 194123313.15,
+    "technical_indicators": {
+      "macd": "Bearish Trend",
+      "volume_surge": 1.16,
+      "breakout_detected": false,
+      "sma200": 16.94,
+      "sma50": 18.3,
+      "rsi": 48.64
+    },
+    "ticker": "JPPOWER",
+    "subscores": {
+      "news_impact": 50.0,
+      "technical_strength": 45.0,
+      "volume_momentum": 33.0,
+      "company_quality": 55.0
+    }
+  }
+]

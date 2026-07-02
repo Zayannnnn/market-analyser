@@ -1,0 +1,14 @@
+# Firebase Credentials
+firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Environment Configuration
+.env
+
+# Python caching
+pycache/
+__pycache__/
+*.pyc
+
+# Node dependencies
+node_modules/

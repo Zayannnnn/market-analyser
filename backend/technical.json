@@ -1,0 +1,138 @@
+{
+  "ADANIPORTS": {
+    "rsi": 58.86,
+    "macd": "Bearish Trend",
+    "sma50": 1630.15,
+    "sma200": 1491.74,
+    "volume_surge": 0.34,
+    "breakout_detected": false
+  },
+  "BEL": {
+    "rsi": 39.13,
+    "macd": "Bearish Trend",
+    "sma50": 428.33,
+    "sma200": 416.55,
+    "volume_surge": 0.45,
+    "breakout_detected": false
+  },
+  "BHARTIARTL": {
+    "rsi": 40.96,
+    "macd": "Bearish Trend",
+    "sma50": 1840.2,
+    "sma200": 1955.95,
+    "volume_surge": 0.37,
+    "breakout_detected": false
+  },
+  "CANBK": {
+    "rsi": 49.62,
+    "macd": "Bullish Trend",
+    "sma50": 133.87,
+    "sma200": 136.53,
+    "volume_surge": 0.51,
+    "breakout_detected": false
+  },
+  "COALINDIA": {
+    "rsi": 65.76,
+    "macd": "Bullish Trend",
+    "sma50": 457.62,
+    "sma200": 416.74,
+    "volume_surge": 0.51,
+    "breakout_detected": false
+  },
+  "HDFCBANK": {
+    "rsi": 42.31,
+    "macd": "Bearish Trend",
+    "sma50": 773.51,
+    "sma200": 910.7,
+    "volume_surge": 0.7,
+    "breakout_detected": false
+  },
+  "ICICIBANK": {
+    "rsi": 46.12,
+    "macd": "Bearish Trend",
+    "sma50": 1274.57,
+    "sma200": 1351.7,
+    "volume_surge": 0.71,
+    "breakout_detected": false
+  },
+  "INFY": {
+    "rsi": 51.6,
+    "macd": "Bullish Trend",
+    "sma50": 1220.08,
+    "sma200": 1431.98,
+    "volume_surge": 0.5,
+    "breakout_detected": false
+  },
+  "ITC": {
+    "rsi": 30.54,
+    "macd": "Bearish Trend",
+    "sma50": 300.98,
+    "sma200": 356.81,
+    "volume_surge": 0.83,
+    "breakout_detected": false
+  },
+  "JPPOWER": {
+    "rsi": 48.96,
+    "macd": "Bearish Trend",
+    "sma50": 18.36,
+    "sma200": 17.53,
+    "volume_surge": 0.43,
+    "breakout_detected": false
+  },
+  "LT": {
+    "rsi": 45.37,
+    "macd": "Bearish Trend",
+    "sma50": 3925.13,
+    "sma200": 3899.48,
+    "volume_surge": 0.47,
+    "breakout_detected": false
+  },
+  "NHPC": {
+    "rsi": 40.72,
+    "macd": "Bearish Trend",
+    "sma50": 79.17,
+    "sma200": 79.92,
+    "volume_surge": 2.11,
+    "breakout_detected": false
+  },
+  "RELIANCE": {
+    "rsi": 33.58,
+    "macd": "Bearish Trend",
+    "sma50": 1363.99,
+    "sma200": 1427.52,
+    "volume_surge": 0.9,
+    "breakout_detected": false
+  },
+  "SBIN": {
+    "rsi": 43.61,
+    "macd": "Bullish Trend",
+    "sma50": 1024.96,
+    "sma200": 987.06,
+    "volume_surge": 0.7,
+    "breakout_detected": false
+  },
+  "TCS": {
+    "rsi": 40.03,
+    "macd": "Bullish Trend",
+    "sma50": 2407.61,
+    "sma200": 2864.03,
+    "volume_surge": 0.62,
+    "breakout_detected": false
+  },
+  "VEDL": {
+    "rsi": 31.74,
+    "macd": "Bullish Trend",
+    "sma50": 514.34,
+    "sma200": 550.28,
+    "volume_surge": 0.3,
+    "breakout_detected": false
+  },
+  "WIPRO": {
+    "rsi": 55.51,
+    "macd": "Bullish Trend",
+    "sma50": 199.42,
+    "sma200": 230.69,
+    "volume_surge": 0.75,
+    "breakout_detected": false
+  }
+}

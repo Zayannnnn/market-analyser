@@ -1,0 +1,115 @@
+{
+  "timestamp": "2026-06-04T08:15:17.108490Z",
+  "top10": [
+    {
+      "rank": 1,
+      "ticker": "INFY",
+      "company_name": "INFY Limited",
+      "price": "\u20b91,202.40",
+      "change": "-1.65%",
+      "score": 68,
+      "confidence": "Medium",
+      "sentiment": "Bearish",
+      "why_ranked": "The stock's robust valuation score of 68/100 is complemented by a bullish MACD trend, signaling positive underlying momentum. Recent industry news points to strong AI demand, acting as a significant catalyst for the IT sector and boosting sentiment around Infosys."
+    },
+    {
+      "rank": 2,
+      "ticker": "COALINDIA",
+      "company_name": "COALINDIA Limited",
+      "price": "\u20b9481.60",
+      "change": "+1.97%",
+      "score": 65,
+      "confidence": "Medium",
+      "sentiment": "Bullish",
+      "why_ranked": "The stock scored favorably due to a strong bullish MACD trend and notable daily price appreciation. A solid valuation score of 65/100 further supports its overall technical and fundamental assessment."
+    },
+    {
+      "rank": 3,
+      "ticker": "WIPRO",
+      "company_name": "WIPRO Limited",
+      "price": "\u20b9204.71",
+      "change": "+0.30%",
+      "score": 64,
+      "confidence": "Medium",
+      "sentiment": "Bullish",
+      "why_ranked": "Wipro scores well due to a solid valuation score of 64/100 and positive technical indicators such as a bullish MACD trend. Further supporting its ranking, recent news highlights increased futures open interest and general market buzz, pointing to growing investor attention and potential demand."
+    },
+    {
+      "rank": 4,
+      "ticker": "ADANIPORTS",
+      "company_name": "ADANIPORTS Limited",
+      "price": "\u20b91,791.60",
+      "change": "-0.68%",
+      "score": 61,
+      "confidence": "Medium",
+      "sentiment": "Bearish",
+      "why_ranked": "The stock's solid valuation score of 61/100 indicates underlying fundamental strength. This positive valuation metric contributes significantly to its ranking within our analytical engine, despite mixed technical signals."
+    },
+    {
+      "rank": 5,
+      "ticker": "TCS",
+      "company_name": "TCS Limited",
+      "price": "\u20b92,233.10",
+      "change": "-0.38%",
+      "score": 61,
+      "confidence": "Medium",
+      "sentiment": "Bearish",
+      "why_ranked": "The stock exhibits a bullish MACD trend and has been identified by market sentiment as flashing bullish signals, pointing towards a potential uptrend. This positive outlook is further bolstered by strong sector tailwinds driven by robust AI demand."
+    },
+    {
+      "rank": 6,
+      "ticker": "JPPOWER",
+      "company_name": "JPPOWER Limited",
+      "price": "\u20b919.06",
+      "change": "-1.40%",
+      "score": 58,
+      "confidence": "Low",
+      "sentiment": "Bearish",
+      "why_ranked": "The stock's moderate valuation score of 58/100 contributed positively to its overall fundamental ranking within the engine. However, its current technical indicators, including a bearish MACD trend and negative daily performance, are currently limiting its higher placement."
+    },
+    {
+      "rank": 7,
+      "ticker": "LT",
+      "company_name": "LT Limited",
+      "price": "\u20b93,933.10",
+      "change": "-0.51%",
+      "score": 58,
+      "confidence": "Low",
+      "sentiment": "Bearish",
+      "why_ranked": "The stock received attention due to its above-average valuation score of 58/100, indicating potential underlying value. However, this is largely offset by prevailing bearish technical trends and lack of immediate momentum catalysts."
+    },
+    {
+      "rank": 8,
+      "ticker": "CANBK",
+      "company_name": "CANBK Limited",
+      "price": "\u20b9132.00",
+      "change": "+0.11%",
+      "score": 57,
+      "confidence": "Medium",
+      "sentiment": "Bullish",
+      "why_ranked": "Ticker CANBK shows strong momentum signals based on technical indicators and volume spikes."
+    },
+    {
+      "rank": 9,
+      "ticker": "NHPC",
+      "company_name": "NHPC Limited",
+      "price": "\u20b975.14",
+      "change": "+0.05%",
+      "score": 57,
+      "confidence": "Medium",
+      "sentiment": "Bullish",
+      "why_ranked": "The stock scored moderately on our technical/sentiment engine primarily due to a significant volume surge and recent news highlighting a share jump and increased futures open interest, indicating heightened market activity. Despite some bearish technical indicators, these factors suggest strong investor attention and potential for short-term sentiment-driven movement."
+    },
+    {
+      "rank": 10,
+      "ticker": "SBIN",
+      "company_name": "SBIN Limited",
+      "price": "\u20b9974.15",
+      "change": "+0.38%",
+      "score": 57,
+      "confidence": "Medium",
+      "sentiment": "Bullish",
+      "why_ranked": "The stock's current performance benefits from a clear bullish MACD trend, signaling positive momentum. This technical strength is complemented by a modest positive daily price change, contributing to its overall ranking."
+    }
+  ]
+}

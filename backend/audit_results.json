@@ -1,0 +1,57 @@
+{
+  "firestore": {
+    "stocks": "ACCESSIBLE",
+    "news": "ACCESSIBLE",
+    "rankings": "ACCESSIBLE",
+    "snapshots": "ACCESSIBLE",
+    "ai_analysis": "ACCESSIBLE",
+    "alerts": "ACCESSIBLE",
+    "prediction_history": "ACCESSIBLE",
+    "learning_stats": "ACCESSIBLE"
+  },
+  "market_data": {
+    "RELIANCE.NS": {
+      "price": 1297.7,
+      "status": "REAL",
+      "latency": 0.8363409042358398
+    },
+    "TCS.NS": {
+      "price": 2233.6,
+      "status": "REAL",
+      "latency": 0.851855993270874
+    },
+    "^NSEI": {
+      "price": 23356.95,
+      "status": "REAL",
+      "latency": 0.724107027053833
+    }
+  },
+  "endpoints": {
+    "/api/top10": {
+      "status": "SUCCESS",
+      "status_code": 200,
+      "latency": 2.535968065261841
+    },
+    "/api/market-summary": {
+      "status": "SUCCESS",
+      "status_code": 200,
+      "latency": 1.0885899066925049
+    },
+    "/api/alerts": {
+      "status": "SUCCESS",
+      "status_code": 200,
+      "latency": 0.32129406929016113
+    },
+    "/api/learning/stats": {
+      "status": "SUCCESS",
+      "status_code": 200,
+      "latency": 1.5013971328735352
+    }
+  },
+  "env_vars": {
+    "GEMINI_API_KEY": "CONFIGURED",
+    "TELEGRAM_BOT_TOKEN": "CONFIGURED",
+    "TELEGRAM_CHAT_ID": "CONFIGURED",
+    "FIREBASE_PROJECT_ID": "CONFIGURED"
+  }
+}

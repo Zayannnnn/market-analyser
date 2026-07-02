@@ -1,0 +1,153 @@
+[
+  {
+    "ticker": "BEL",
+    "companyName": "Bharat Electronics Ltd",
+    "providerTicker": "BEL.NS",
+    "sector": "Aerospace & Defense"
+  },
+  {
+    "ticker": "BPCL",
+    "companyName": "Bharat Petroleum Corporation Ltd",
+    "providerTicker": "BPCL.NS",
+    "sector": "Energy"
+  },
+  {
+    "ticker": "BANKBARODA",
+    "companyName": "Bank of Baroda",
+    "providerTicker": "BANKBARODA.NS",
+    "sector": "Financial Services"
+  },
+  {
+    "ticker": "BHARTIARTL",
+    "companyName": "Bharti Airtel Ltd",
+    "providerTicker": "BHARTIARTL.NS",
+    "sector": "Telecommunications"
+  },
+  {
+    "ticker": "BHEL",
+    "companyName": "Bharat Heavy Electricals Ltd",
+    "providerTicker": "BHEL.NS",
+    "sector": "Industrials"
+  },
+  {
+    "ticker": "HCLTECH",
+    "companyName": "HCL Technologies Ltd",
+    "providerTicker": "HCLTECH.NS",
+    "sector": "Technology"
+  },
+  {
+    "ticker": "HDFCBANK",
+    "companyName": "HDFC Bank Ltd",
+    "providerTicker": "HDFCBANK.NS",
+    "sector": "Financial Services"
+  },
+  {
+    "ticker": "HINDCOPPER",
+    "companyName": "Hindustan Copper Ltd",
+    "providerTicker": "HINDCOPPER.NS",
+    "sector": "Metals & Mining"
+  },
+  {
+    "ticker": "HFCL",
+    "companyName": "HFCL Ltd",
+    "providerTicker": "HFCL.NS",
+    "sector": "Telecommunications",
+    "searchTerms": ["HC"]
+  },
+  {
+    "ticker": "RELIANCE",
+    "companyName": "Reliance Industries Ltd",
+    "providerTicker": "RELIANCE.NS",
+    "sector": "Energy"
+  },
+  {
+    "ticker": "INFY",
+    "companyName": "Infosys Ltd",
+    "providerTicker": "INFY.NS",
+    "sector": "Technology"
+  },
+  {
+    "ticker": "TCS",
+    "companyName": "Tata Consultancy Services Ltd",
+    "providerTicker": "TCS.NS",
+    "sector": "Technology"
+  },
+  {
+    "ticker": "ICICIBANK",
+    "companyName": "ICICI Bank Ltd",
+    "providerTicker": "ICICIBANK.NS",
+    "sector": "Financial Services"
+  },
+  {
+    "ticker": "SBIN",
+    "companyName": "State Bank of India",
+    "providerTicker": "SBIN.NS",
+    "sector": "Financial Services"
+  },
+  {
+    "ticker": "ITC",
+    "companyName": "ITC Ltd",
+    "providerTicker": "ITC.NS",
+    "sector": "Consumer Defensive"
+  },
+  {
+    "ticker": "LT",
+    "companyName": "Larsen & Toubro Ltd",
+    "providerTicker": "LT.NS",
+    "sector": "Industrials"
+  },
+  {
+    "ticker": "TMPV",
+    "companyName": "Tata Motors Passenger Vehicles Ltd",
+    "providerTicker": "TMPV.NS",
+    "sector": "Automobiles"
+  },
+  {
+    "ticker": "ADANIPORTS",
+    "companyName": "Adani Ports and SEZ Ltd",
+    "providerTicker": "ADANIPORTS.NS",
+    "sector": "Infrastructure"
+  },
+  {
+    "ticker": "NHPC",
+    "companyName": "NHPC Ltd",
+    "providerTicker": "NHPC.NS",
+    "sector": "Utilities"
+  },
+  {
+    "ticker": "OLAELEC",
+    "companyName": "Ola Electric Mobility Ltd",
+    "providerTicker": "OLAELEC.NS",
+    "sector": "Automobiles"
+  },
+  {
+    "ticker": "CANBK",
+    "companyName": "Canara Bank",
+    "providerTicker": "CANBK.NS",
+    "sector": "Financial Services"
+  },
+  {
+    "ticker": "JPPOWER",
+    "companyName": "Jaiprakash Power Ventures Ltd",
+    "providerTicker": "JPPOWER.NS",
+    "sector": "Utilities"
+  },
+  {
+    "ticker": "VEDL",
+    "companyName": "Vedanta Ltd",
+    "providerTicker": "VEDL.NS",
+    "sector": "Metals & Mining"
+  },
+  {
+    "ticker": "WIPRO",
+    "companyName": "Wipro Ltd",
+    "providerTicker": "WIPRO.NS",
+    "sector": "Technology"
+  },
+  {
+    "ticker": "COALINDIA",
+    "companyName": "Coal India Ltd",
+    "providerTicker": "COALINDIA.NS",
+    "sector": "Energy"
+  }
+]
