@@ -55,23 +55,12 @@ class UpstoxClient:
             logger.warning(f"Ticker {ticker} not found in registry.")
             return None
             
-        prov_ticker = str(registry_entry["provider_ticker"])
-        
-        # Format key based on segment
-        if prov_ticker.startswith("^"):
-            # Indexes: e.g. NSE_INDEX|Nifty 50, BSE_INDEX|SENSEX
-            if ticker == "NIFTY50" or ticker == "^NSEI":
-                instrument_key = "NSE_INDEX|Nifty 50"
-            elif ticker == "BANKNIFTY" or ticker == "^NSEBANK":
-                instrument_key = "NSE_INDEX|Nifty Bank"
-            elif ticker == "SENSEX" or ticker == "^BSESN":
-                instrument_key = "BSE_INDEX|SENSEX"
-            else:
-                logger.warning(f"Index {ticker} is not supported on standard Upstox segments. Using simulated candles.")
-                return None
-        else:
-            # Equities: e.g. NSE_EQ|TCS
-            instrument_key = f"NSE_EQ|{ticker}"
+        from app.services.instrument_lookup import get_upstox_instrument
+        inst = get_upstox_instrument(ticker)
+        if not inst:
+            logger.warning(f"Ticker {ticker} not found in Upstox instrument master list. Using simulated candles.")
+            return None
+        instrument_key = inst["instrument_key"]
             
         today = datetime.date.today()
         # Fetch 500 calendar days (approx 350 trading days) to ensure sufficient history for technical indicators
@@ -232,10 +221,16 @@ def get_market_data(ticker: str, period: str = "2y", allow_fallback: bool = True
     query_ticker = str(registry_entry["provider_ticker"])
     
     # 1. Fetch candles from Upstox (or mock)
-    res = upstox_client.fetch_historical_candles(ticker)
-    if not res:
+    token = upstox_client.get_access_token()
+    if token:
+        # Account is connected: use REAL Upstox data, fail if it fails
+        res = upstox_client.fetch_historical_candles(ticker)
+        if not res:
+            raise ValueError(f"Upstox Historical Candle API call failed for connected account on {ticker}. Fallbacks are disabled in production mode.")
+    else:
+        # Offline testing mode: use simulated candles
+        logger.warning(f"No Upstox access token found. Running in offline/testing mode with simulated candles.")
         res = upstox_client.generate_simulated_candles(ticker)
-        logger.info(f"Loaded simulated historical candle data for {ticker}.")
         
     candles = res["candles"]
     source = res["source"]

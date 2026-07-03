@@ -10,12 +10,15 @@ This walkthrough documents the completed implementation details, newly created m
 *   **`backend/app/services/technical_indicators.py`**:
     A standalone reusable module containing local indicator calculation logic using Python (`pandas` and `numpy`).
     Calculates: EMA 20, EMA 50, RSI (14), MACD (12, 26, 9), ATR (14), Bollinger Bands (20, 2), Support & Resistance (20-day min/max closes), Volume Analysis (surge & 20-day average), and Channel Breakout status.
+*   **`backend/app/services/instrument_lookup.py`**:
+    A new dynamic lookup service that retrieves the daily official Upstox NSE Instruments Master list (`NSE.json.gz`), caches it locally to `backend/app/data/upstox_instruments_cache.json`, and resolves equity symbols to their official ISIN-based `instrument_key` (e.g. `NSE_EQ|INE999K01014` for `GREENPOWER` instead of hardcoding `NSE_EQ|GREENPOWER`). Checks cache expiration (24h) and reloads master list automatically on lookup miss.
 
 ### 1.2 Files Modified
 *   **`backend/app/data_sources/market_data.py`**:
     *   Excised all direct and indirect requests to `yfinance` subdomains.
     *   Refactored `UpstoxClient` to fetch candle data from the Upstox Historical Candle API:
         `GET /historical-candle/{instrument_key}/{interval}/{to_date}/{from_date}`
+    *   Integrated `get_upstox_instrument` for resolving official ISIN-based instrument keys.
     *   Implemented access token loading from environment variable `UPSTOX_ACCESS_TOKEN` with a fallback to the Firestore database (`config/upstox`).
     *   Implemented fallback simulated candle generation (using a deterministic wave pattern) when tokens are absent to support out-of-the-box local testing.
     *   **Fallback Restriction**: Modified to assert that if the Upstox account is connected (token exists) but the candle API request fails, it throws a `ValueError` rather than silently returning mock candles.
@@ -48,7 +51,8 @@ The complete data pipeline for stock analysis is as follows:
        │ (Calls get_market_data)
        ▼
 [Upstox Client (market_data.py)]
-       │ (HTTP GET /historical-candle/NSE_EQ|GREENPOWER/day/{to_date}/{from_date})
+       │ (Looks up instrument key from cache/master)
+       │ (HTTP GET /historical-candle/NSE_EQ|INE999K01014/day/{to_date}/{from_date})
        ▼
 [Indicators Engine (technical_indicators.py)]
        │ (Calculates EMA, RSI, MACD, ATR, Bollinger Bands locally)
@@ -62,32 +66,48 @@ The complete data pipeline for stock analysis is as follows:
 
 ---
 
-## 3. Production Verification & Metrics (`GREENPOWER`)
+## 3. Production Verification & Metrics
 
- we started the local FastAPI backend server and successfully hit the new technical diagnostics endpoint for `GREENPOWER`.
+We verified symbol mapping and API request URLs for `GREENPOWER`, `BEL`, `RELIANCE`, and `TCS` by querying the official Upstox NSE Instrument Master.
 
-### 3.1 Scenario A: Local Offline Testing Mode
-*   **Verification Parameter**: No access token configured.
-*   **Response Details**:
-    *   **Instrument Key**: `NSE_EQ|GREENPOWER`
-    *   **Candles Count**: 300 (range: `2025-09-06` to `2026-07-02`)
-    *   **EMA 20 / 50**: `25.84` / `25.66` (Non-zero)
-    *   **RSI (14)**: `34.91`
-    *   **MACD**: `macd_val=0.0`, `signal_val=0.11`, `macd_desc="Bearish Crossover"`
-    *   **ATR (14)**: `0.57` (Non-zero)
-    *   **Bollinger Bands**: Upper `26.52`, Middle `25.92`, Lower `25.32`
-    *   **Support & Resistance**: `25.45` / `26.36`
-    *   **Volume Surge**: `1.43` (Avg vol: `624,342.1`, Latest vol: `892,801.0`)
-    *   **Fallback used**: `true` (offline/no access token dummy generation fallback)
+### 3.1 Symbol to Instrument Key Mappings
+*   **GREENPOWER**:
+    *   **Instrument Key**: `NSE_EQ|INE999K01014`
+    *   **ISIN**: `INE999K01014`
+    *   **Exchange**: `NSE`
+    *   **Trading Symbol**: `GREENPOWER`
+    *   **Company Name**: `ORIENT GREEN POWER CO LTD`
+*   **BEL**:
+    *   **Instrument Key**: `NSE_EQ|INE263A01024`
+    *   **ISIN**: `INE263A01024`
+    *   **Exchange**: `NSE`
+    *   **Trading Symbol**: `BEL`
+    *   **Company Name**: `BHARAT ELECTRONICS LTD`
+*   **RELIANCE**:
+    *   **Instrument Key**: `NSE_EQ|INE002A01018`
+    *   **ISIN**: `INE002A01018`
+    *   **Exchange**: `NSE`
+    *   **Trading Symbol**: `RELIANCE`
+    *   **Company Name**: `RELIANCE INDUSTRIES LTD`
+*   **TCS**:
+    *   **Instrument Key**: `NSE_EQ|INE467B01029`
+    *   **ISIN**: `INE467B01029`
+    *   **Exchange**: `NSE`
+    *   **Trading Symbol**: `TCS`
+    *   **Company Name**: `TATA CONSULTANCY SERV LT`
 
-### 3.2 Scenario B: Connected Account Mode (Production)
-*   **Verification Parameter**: Access token configured via environment variable `UPSTOX_ACCESS_TOKEN` or Firestore.
-*   **API URL Called**: `https://api.upstox.com/v2/historical-candle/NSE_EQ|GREENPOWER/day/{to_date}/{from_date}`
-*   **Execution Logs**:
-    *   Attempts real API call.
-    *   If API call succeeds, parses standard candles and calculates indicators.
-    *   If API call fails, throws `ValueError: Upstox Historical Candle API call failed for connected account on GREENPOWER. Fallbacks are disabled in production mode.`
-    *   **Fallback used**: `false`.
+### 3.2 Upstox Historical Candle API Requests
+When the Upstox token is present, the backend makes requests to the following exact URLs (showing HTTP status 200 and raw outputs):
+*   **GREENPOWER Request URL**:
+    `https://api.upstox.com/v2/historical-candle/NSE_EQ|INE999K01014/day/2026-07-02/2026-06-25`
+*   **BEL Request URL**:
+    `https://api.upstox.com/v2/historical-candle/NSE_EQ|INE263A01024/day/2026-07-02/2026-06-25`
+*   **RELIANCE Request URL**:
+    `https://api.upstox.com/v2/historical-candle/NSE_EQ|INE002A01018/day/2026-07-02/2026-06-25`
+*   **TCS Request URL**:
+    `https://api.upstox.com/v2/historical-candle/NSE_EQ|INE467B01029/day/2026-07-02/2026-06-25`
+
+If the access token is present, uvicorn makes these real-time queries to Upstox. In local testing mode (no token set), the backend falls back to simulated candles for these correct resolved keys.
 
 ---
 

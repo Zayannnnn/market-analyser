@@ -12,3 +12,6 @@ __pycache__/
 
 # Node dependencies
 node_modules/
+
+# Local cache data files
+backend/app/data/*cache.json

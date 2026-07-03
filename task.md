@@ -21,8 +21,9 @@
 - [x] Update technical analysis agent in `agents/technical.py` to consume the new indicators module
 - [x] Remove hardcoded placeholder fallbacks (EMA=0, ATR=0, MACD Neutral, RSI=50) when valid candles exist
 - [x] Register test stock `GREENPOWER` in `stock_master.json`
+- [x] Implement dynamic caching lookup service `backend/app/services/instrument_lookup.py` to resolve symbols to their official Upstox `instrument_key` (via the S3/Cloudfront Beginning-of-Day Instruments Master GZIP data) instead of hardcoding `NSE_EQ|{ticker}` format.
 - [x] Create technical diagnostics endpoint `/api/upstox/technical-diagnostics` in `main.py`
-- [x] Verify calculations for `GREENPOWER` (EMA, ATR, MACD, S/R, Volume metrics are non-zero)
+- [x] Verify calculations for `GREENPOWER`, `BEL`, `RELIANCE`, and `TCS` (confirming proper instrument key mapping like `NSE_EQ|INE999K01014` and validation URLs).
 - [x] Confirm no Yahoo Finance requests are executed
 - [x] Update task list in `task.md` and document changes in `walkthrough.md`
 - [x] Commit and prepare for deployment
