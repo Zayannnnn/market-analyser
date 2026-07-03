@@ -27,3 +27,10 @@
 - [x] Confirm no Yahoo Finance requests are executed
 - [x] Update task list in `task.md` and document changes in `walkthrough.md`
 - [x] Commit and prepare for deployment
+
+## Phase 3.3: Production Verification [COMPLETE]
+- [x] Restrict fallback generator in production (fail loudly if authenticated account fails to pull candles)
+- [x] Search and verify complete elimination of yfinance/Yahoo/synth references in codebase
+- [x] Remove dead code and dummy indicators fallbacks
+- [x] Build interactive production verification utility `verify_production.py` to execute non-mocked requests using live Upstox account tokens
+- [x] Update walkthrough.md and task.md

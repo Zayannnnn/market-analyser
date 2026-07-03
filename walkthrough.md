@@ -1,6 +1,6 @@
-# Phase 3.2 Walkthrough & Production Verification Report
+# Phase 3.2 & 3.3 Walkthrough & Production Verification Report
 
-This walkthrough documents the completed implementation details, newly created modules, API changes, and verification test results for **Phase 3.2 — Yahoo Finance Removal & Upstox Migration**.
+This walkthrough documents the completed implementation details, newly created modules, API changes, codebase audits, and verification test results for **Phase 3.2 & Phase 3.3 — Yahoo Finance Removal & Upstox Migration**.
 
 ---
 
@@ -12,6 +12,8 @@ This walkthrough documents the completed implementation details, newly created m
     Calculates: EMA 20, EMA 50, RSI (14), MACD (12, 26, 9), ATR (14), Bollinger Bands (20, 2), Support & Resistance (20-day min/max closes), Volume Analysis (surge & 20-day average), and Channel Breakout status.
 *   **`backend/app/services/instrument_lookup.py`**:
     A new dynamic lookup service that retrieves the daily official Upstox NSE Instruments Master list (`NSE.json.gz`), caches it locally to `backend/app/data/upstox_instruments_cache.json`, and resolves equity symbols to their official ISIN-based `instrument_key` (e.g. `NSE_EQ|INE999K01014` for `GREENPOWER` instead of hardcoding `NSE_EQ|GREENPOWER`). Checks cache expiration (24h) and reloads master list automatically on lookup miss.
+*   **`backend/scratch/verify_production.py`**:
+    An interactive utility script for the user to run live verification queries directly against the Upstox API using their active token. Prints raw candle data and calculates real-time technical indicators.
 
 ### 1.2 Files Modified
 *   **`backend/app/data_sources/market_data.py`**:
@@ -20,7 +22,6 @@ This walkthrough documents the completed implementation details, newly created m
         `GET /historical-candle/{instrument_key}/{interval}/{to_date}/{from_date}`
     *   Integrated `get_upstox_instrument` for resolving official ISIN-based instrument keys.
     *   Implemented access token loading from environment variable `UPSTOX_ACCESS_TOKEN` with a fallback to the Firestore database (`config/upstox`).
-    *   Implemented fallback simulated candle generation (using a deterministic wave pattern) when tokens are absent to support out-of-the-box local testing.
     *   **Fallback Restriction**: Modified to assert that if the Upstox account is connected (token exists) but the candle API request fails, it throws a `ValueError` rather than silently returning mock candles.
     *   Integrated company profile loading from the Firestore cache (`/stocks/{ticker}`).
 *   **`backend/app/data_sources/live_quotes.py`**:
@@ -37,6 +38,8 @@ This walkthrough documents the completed implementation details, newly created m
     *   Added the `GREENPOWER` (Orient Green Power Co Ltd) stock entry.
 *   **`backend/requirements.txt`**:
     *   Removed the `yfinance` package.
+*   **`.gitignore`**:
+    *   Added local instrument caches.
 
 ---
 
@@ -111,8 +114,18 @@ If the access token is present, uvicorn makes these real-time queries to Upstox.
 
 ---
 
-## 4. Yahoo Finance Requests Verification
-By checking the backend execution logs during uvicorn startup and subsequent endpoints evaluation:
-*   `yfinance` is no longer imported or called.
-*   No requests are sent to `query2.finance.yahoo.com` or `query1.finance.yahoo.com`.
-*   All data is fetched from the Upstox Historical Candle API (or the simulated candle generator when offline), and indicators are calculated locally, successfully fulfilling the phase goals.
+## 4. Codebase Audit: Yahoo/Synthetic References Removal
+A comprehensive search was executed across all `.py`, `.ts`, `.tsx`, and `.js` source files in the repository.
+*   **yfinance / Yahoo**: 0 leftover functional imports or calls remain (only a single documentation note in a comment block).
+*   **Synthetic Fallbacks / Placeholders (EMA=0, ATR=0, etc.)**: 0 functional occurrences found. The backend throws an error in production mode if the Upstox candle request fails, blocking any fallback data from contaminating the frontend metrics.
+
+---
+
+## 5. Live Production Verification Guide
+To perform a live check with your Upstox credentials, run:
+```powershell
+$env:GEMINI_API_KEY="your_gemini_key"
+$env:UPSTOX_ACCESS_TOKEN="your_upstox_oauth_token"
+c:\Users\zayan\Documents\antigravity\python311\python.exe C:\Users\zayan\.gemini\antigravity\brain\5af8944f-705f-4cfc-a891-673895ca536d\scratch\verify_production.py
+```
+This script queries the Upstox API using the correct instrument key, prints the HTTP status and raw candles, and executes local indicator computations.
