@@ -27,11 +27,13 @@ class UpstoxClient:
         if hasattr(settings, "upstox_access_token") and settings.upstox_access_token:
             return settings.upstox_access_token
             
-        # 3. Check Firestore configuration config/upstox
+        # 3. Check Firestore configuration config/upstox or config/upstox_auth
         try:
             from app.db import db, MockFirestoreClient
             if not isinstance(db, MockFirestoreClient):
                 doc = db.collection("config").document("upstox").get()
+                if not doc.exists:
+                    doc = db.collection("config").document("upstox_auth").get()
                 if doc.exists:
                     ddata = doc.to_dict()
                     token = ddata.get("access_token") or ddata.get("accessToken")
@@ -102,69 +104,6 @@ class UpstoxClient:
                 
         return None
 
-    def generate_simulated_candles(self, ticker: str, days: int = 300) -> Dict[str, Any]:
-        """Generates realistic simulated candle arrays for development and fallback testing."""
-        import math
-        
-        seed_val = sum(ord(c) for c in ticker)
-        def get_val(i):
-            return math.sin(seed_val + i / 8.0) * math.cos(i / 4.0)
-            
-        base_price = 100.0
-        if "GREENPOWER" in ticker:
-            base_price = 22.50
-        elif "RELIANCE" in ticker:
-            base_price = 2450.0
-        elif "TCS" in ticker:
-            base_price = 3850.0
-        elif "INFY" in ticker:
-            base_price = 1550.0
-        elif "SBIN" in ticker:
-            base_price = 780.0
-        elif "NSEI" in ticker or "NIFTY" in ticker:
-            base_price = 22500.0
-        elif "BSESN" in ticker or "SENSEX" in ticker:
-            base_price = 73500.0
-        elif "NSEBANK" in ticker:
-            base_price = 48000.0
-        elif "GSPC" in ticker:
-            base_price = 5400.0
-        elif "IXIC" in ticker:
-            base_price = 16000.0
-            
-        candles = []
-        today = datetime.datetime.now()
-        for i in range(days):
-            dt = (today - datetime.timedelta(days=days - i)).strftime("%Y-%m-%dT09:15:00+05:30")
-            wave = get_val(i)
-            # Create a slight upward trend over time
-            trend = i * (base_price * 0.0005)
-            close_p = base_price + trend + wave * (base_price * 0.03)
-            # Ensure price stays positive
-            close_p = max(1.0, close_p)
-            
-            open_p = close_p - 0.2 + 0.4 * abs(get_val(i + 1))
-            high_p = max(open_p, close_p) + 0.1 + 0.3 * abs(get_val(i + 2))
-            low_p = min(open_p, close_p) - 0.1 - 0.3 * abs(get_val(i + 3))
-            volume = 1000000.0 + 500000.0 * math.sin(i / 12.0)
-            
-            # Format matching Upstox response: [timestamp, open, high, low, close, volume, open_interest]
-            candles.append([
-                dt,
-                round(open_p, 2),
-                round(high_p, 2),
-                round(low_p, 2),
-                round(close_p, 2),
-                int(volume),
-                0
-            ])
-            
-        candles.reverse() # newer candles first (matches Upstox default)
-        return {
-            "candles": candles,
-            "source": "simulated"
-        }
-
 upstox_client = UpstoxClient()
 
 def get_profile_from_firestore(ticker: str) -> Dict[str, Any]:
@@ -210,8 +149,7 @@ def get_profile_from_firestore(ticker: str) -> Dict[str, Any]:
 def get_market_data(ticker: str, period: str = "2y", allow_fallback: bool = True) -> Dict[str, Any]:
     """
     Fetches daily candles and metadata for a given stock symbol.
-    Uses Upstox API exclusively; falls back to simulated candles when keys are absent.
-    Yahoo Finance is completely removed.
+    Uses Upstox API exclusively. Yahoo Finance is completely removed.
     """
     registry_entry = resolve_ticker(ticker)
     if not registry_entry:
@@ -220,17 +158,14 @@ def get_market_data(ticker: str, period: str = "2y", allow_fallback: bool = True
     ticker = str(registry_entry["ticker"])
     query_ticker = str(registry_entry["provider_ticker"])
     
-    # 1. Fetch candles from Upstox (or mock)
+    # 1. Fetch candles from Upstox (no simulated candles fallback)
     token = upstox_client.get_access_token()
-    if token:
-        # Account is connected: use REAL Upstox data, fail if it fails
-        res = upstox_client.fetch_historical_candles(ticker)
-        if not res:
-            raise ValueError(f"Upstox Historical Candle API call failed for connected account on {ticker}. Fallbacks are disabled in production mode.")
-    else:
-        # Offline testing mode: use simulated candles
-        logger.warning(f"No Upstox access token found. Running in offline/testing mode with simulated candles.")
-        res = upstox_client.generate_simulated_candles(ticker)
+    if not token:
+        raise ValueError(f"Upstox access token missing. Live database or env token is required.")
+        
+    res = upstox_client.fetch_historical_candles(ticker)
+    if not res:
+        raise ValueError(f"Upstox Historical Candle API call failed on {ticker}.")
         
     candles = res["candles"]
     source = res["source"]

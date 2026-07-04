@@ -34,3 +34,13 @@
 - [x] Remove dead code and dummy indicators fallbacks
 - [x] Build interactive production verification utility `verify_production.py` to execute non-mocked requests using live Upstox account tokens
 - [x] Update walkthrough.md and task.md
+
+## Phase 3.4: Final Live Production Verification [COMPLETE]
+- [x] Retrieve serviceAccountKey.json and copy to active backend folder
+- [x] Map config database path to config/upstox_auth
+- [x] Query and verify live Upstox candles and local indicator calculations for GREENPOWER, BEL, and RELIANCE
+- [x] Confirm exact calculated values propagate to Firestore
+- [x] Purge simulated candle generators and fallbacks from market_data.py completely
+- [x] Verify zero leftover Yahoo/placeholder references in backend and frontend
+- [x] Create automated deployment helper script deploy.ps1 for Cloud Run and Vercel
+- [x] Update walkthrough.md and task.md
