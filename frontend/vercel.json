@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://market-analyser-production.up.railway.app/api/:path*"
+      "destination": "https://us-central1-market-analyser-dc39c.cloudfunctions.net/app/api/:path*"
     },
     {
       "source": "/(.*)",

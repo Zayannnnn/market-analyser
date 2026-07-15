@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bookmark, ArrowLeft, CheckCircle2, ShieldAlert, Award, Star, BarChart3, HelpCircle, Activity } from 'lucide-react';
+import { Bookmark, ArrowLeft, CheckCircle2, ShieldAlert, Award, Star, BarChart3, HelpCircle, Activity, TrendingUp, Target, Shield, Coins, Flame } from 'lucide-react';
 import { createChart, LineSeries } from 'lightweight-charts';
 import { StockItem, PortfolioItem } from '../App.tsx';
 
@@ -108,9 +108,7 @@ const ChartComponent = ({ prices, dates }: { prices: number[]; dates: string[] }
 
 
 // Resolve host URL
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:8000/api' 
-  : '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 interface StockDetailProps {
   stock: StockItem;
@@ -152,6 +150,54 @@ interface DetailData {
     bullish_factors: string[];
     risk_factors: string[];
     confidence_level: string;
+    recommendation?: string;
+    confidence?: number;
+    risk_score?: number;
+    entry?: { min: number; max: number };
+    entry_price?: number;
+    targets?: number[];
+    target_1?: number;
+    target_2?: number;
+    stop_loss?: number;
+    holding_period?: string;
+    position_size?: string;
+    reasoning?: string;
+    technical_summary?: string;
+    fundamental_summary?: string;
+    news_summary?: string;
+    portfolio_advice?: string;
+    market_regime?: string;
+    market_breadth?: number;
+    volatility_annualized?: number;
+    news_sentiment?: string;
+    news_impact_score?: number;
+    key_events?: string[];
+    news_risks?: string[];
+    news_opportunities?: string[];
+    corporate_action_event_detected?: boolean;
+    corporate_action_details?: string;
+    rationale?: {
+      technical?: string;
+      fundamental?: string;
+      news?: string;
+      risk?: string;
+    };
+    risk_metrics?: {
+      portfolio_value: number;
+      holdings_value: number;
+      cash_available: number;
+      cash_exposure_pct: number;
+      sector_exposure: Record<string, number>;
+      position_value: number;
+      position_exposure_pct: number;
+      atr_position_size: number;
+      suggested_qty: number;
+      suggested_allocation: number;
+      max_drawdown_risk_pct: number;
+      risk_score: number;
+      realized_pnl: number;
+      unrealized_pnl: number;
+    };
   };
   news: {
     title: string;
@@ -719,6 +765,197 @@ export default function StockDetail({
           </div>
         </div>
 
+        {/* Institutional AI Decision Engine (Mobile version) */}
+        {ai.recommendation && (
+          <div className="card-panel" style={{ borderLeft: '4px solid var(--info)', marginTop: '0.85rem' }}>
+            <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
+              <Award size={16} className="text-info" /> Institutional AI Decision
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.85rem' }}>
+              <div style={{ padding: '0.5rem 0.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>AI Action</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: '0.1rem', color: ai.recommendation === 'BUY' ? 'var(--success)' : ai.recommendation === 'SELL' ? 'var(--danger)' : 'var(--warning)' }}>
+                  {ai.recommendation}
+                </div>
+              </div>
+              <div style={{ padding: '0.5rem 0.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Confidence</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: '0.1rem', color: 'var(--info)' }}>
+                  {ai.confidence}%
+                </div>
+              </div>
+              <div style={{ padding: '0.5rem 0.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Risk Score</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: '0.1rem', color: ai.risk_score && ai.risk_score > 60 ? 'var(--danger)' : 'var(--success)' }}>
+                  {ai.risk_score}/100
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.75rem', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Entry Price</span>
+                <span style={{ fontWeight: 700 }}>₹{ai.entry_price?.toFixed(2) || (ai.entry ? ((ai.entry.min + ai.entry.max)/2).toFixed(2) : '--')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Stop Loss</span>
+                <span style={{ fontWeight: 700, color: 'var(--danger)' }}>₹{ai.stop_loss?.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Targets</span>
+                <span style={{ fontWeight: 700, color: 'var(--success)' }}>{ai.targets?.map(t => `₹${t.toFixed(1)}`).join(' | ') || '--'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Holding Period</span>
+                <span style={{ fontWeight: 700 }}>{ai.holding_period || '--'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Suggested Position Size</span>
+                <span style={{ fontWeight: 700, color: 'var(--info)' }}>{ai.position_size || '--'}</span>
+              </div>
+            </div>
+
+            {ai.risk_metrics && (
+              <div style={{ padding: '0.65rem', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '6px', fontSize: '0.72rem', marginBottom: '0.85rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--info)', display: 'block', marginBottom: '0.35rem' }}>RISK ENGINE CALCULATIONS</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                  <div>Qty Sizing: <strong>{ai.risk_metrics.suggested_qty}</strong></div>
+                  <div>Max DD Risk: <strong style={{ color: 'var(--danger)' }}>{ai.risk_metrics.max_drawdown_risk_pct}%</strong></div>
+                  <div>Cash Exp: <strong>{ai.risk_metrics.cash_exposure_pct}%</strong></div>
+                  <div>Suggested Alloc: <strong>₹{ai.risk_metrics.suggested_allocation?.toLocaleString('en-IN')}</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* AI Consensus & Self-Evaluation metrics (Mobile view) */}
+            {ai.expected_success_probability !== undefined && (
+              <div style={{ padding: '0.65rem', background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '6px', fontSize: '0.72rem', marginBottom: '0.85rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--success)', display: 'block', marginBottom: '0.35rem' }}>AI SELF-EVALUATION METRICS</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div>Expected Win Prob: <strong className="text-bullish">{ai.expected_success_probability}%</strong></div>
+                  <div>Setups: <strong>{ai.historical_similar_setups}</strong></div>
+                  <div>Match Score: <strong>{ai.backtest_match_pct}%</strong></div>
+                  <div>Reasoning Quality: <strong>{ai.reasoning_quality_score}/100</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* Market & News Intelligence Engine (Premium Dashboard Panel) */}
+            {ai.market_regime && (
+              <div className="card-panel" style={{ borderLeft: '4px solid var(--warning)', marginTop: '0.85rem' }}>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <TrendingUp size={16} className="text-warning" /> AI Market Intelligence
+                </h3>
+
+                {/* Index & Volatility Metrics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.65rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)' }}>Market Regime</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, marginTop: '0.15rem', color: ai.market_regime.includes('Bull') ? 'var(--success)' : ai.market_regime.includes('Bear') ? 'var(--danger)' : 'var(--warning)' }}>
+                      {ai.market_regime.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.65rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)' }}>Market Breadth</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, marginTop: '0.15rem', color: 'var(--info)' }}>
+                      {ai.market_breadth ? (ai.market_breadth * 100).toFixed(0) : '50'}% Adv
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.65rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)' }}>Ann. Volatility</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, marginTop: '0.15rem' }}>
+                      {ai.volatility_annualized}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* News Sentiment & Score */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.65rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>News Sentiment:</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: ai.news_sentiment === 'Bullish' ? 'var(--success)' : ai.news_sentiment === 'Bearish' ? 'var(--danger)' : 'var(--warning)' }}>
+                      {ai.news_sentiment?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ padding: '0.65rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Impact Score:</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--info)' }}>
+                      {ai.news_impact_score}/100
+                    </span>
+                  </div>
+                </div>
+
+                {/* Event Alerts (If any) */}
+                {ai.corporate_action_event_detected && (
+                  <div style={{ padding: '0.65rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--danger)', display: 'block', marginBottom: '0.15rem' }}>⚠️ EVENT ALERT: CORPORATE ACTION DETECTED</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{ai.corporate_action_details}</span>
+                  </div>
+                )}
+
+                {/* Key Events / Opportunities / Risks Lists */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.78rem' }}>
+                  {ai.key_events && ai.key_events.length > 0 && (
+                    <div>
+                      <span style={{ fontWeight: 700, color: 'var(--info)', display: 'block', marginBottom: '0.25rem', fontSize: '0.65rem', letterSpacing: '0.05em' }}>KEY NEWS EVENTS</span>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.key_events.map((e, idx) => <li key={idx}>{e}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {ai.news_opportunities && ai.news_opportunities.length > 0 && (
+                    <div>
+                      <span style={{ fontWeight: 700, color: 'var(--success)', display: 'block', marginBottom: '0.25rem', fontSize: '0.65rem', letterSpacing: '0.05em' }}>AI IDENTIFIED OPPORTUNITIES</span>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.news_opportunities.map((o, idx) => <li key={idx}>{o}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {ai.news_risks && ai.news_risks.length > 0 && (
+                    <div>
+                      <span style={{ fontWeight: 700, color: 'var(--danger)', display: 'block', marginBottom: '0.25rem', fontSize: '0.65rem', letterSpacing: '0.05em' }}>AI IDENTIFIED RISKS</span>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.news_risks.map((r, idx) => <li key={idx}>{r}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Summaries & Advice for Mobile */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.75rem' }}>
+              {ai.technical_summary && (
+                <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--info)', display: 'block', marginBottom: '0.2rem' }}>TECHNICAL SUMMARY</span>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>{ai.technical_summary}</p>
+                </div>
+              )}
+              {ai.fundamental_summary && (
+                <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--success)', display: 'block', marginBottom: '0.2rem' }}>FUNDAMENTAL SUMMARY</span>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>{ai.fundamental_summary}</p>
+                </div>
+              )}
+              {ai.news_summary && (
+                <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--warning)', display: 'block', marginBottom: '0.2rem' }}>NEWS SUMMARY</span>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>{ai.news_summary}</p>
+                </div>
+              )}
+              {ai.portfolio_advice && (
+                <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.01)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--danger)', display: 'block', marginBottom: '0.2rem' }}>PORTFOLIO ADVICE</span>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>{ai.portfolio_advice}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 6. Technical Indicators */}
         <div className="card-panel">
           <h3 className="section-title"><BarChart3 size={16} /> Technical Indicators</h3>
@@ -1056,6 +1293,231 @@ export default function StockDetail({
               </div>
             </div>
 
+            {/* Institutional AI Decision Engine (Desktop version) */}
+            {ai.recommendation && (
+              <div className="card-panel" style={{ borderLeft: '4px solid var(--info)' }}>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Award size={16} className="text-info" /> Institutional AI Decision Engine
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>AI Action</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.2rem', color: ai.recommendation === 'BUY' ? 'var(--success)' : ai.recommendation === 'SELL' ? 'var(--danger)' : 'var(--warning)' }}>
+                      {ai.recommendation}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Confidence</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.2rem', color: 'var(--info)' }}>
+                      {ai.confidence}%
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Risk Score</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.2rem', color: ai.risk_score && ai.risk_score > 60 ? 'var(--danger)' : 'var(--success)' }}>
+                      {ai.risk_score}/100
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ padding: '0.65rem', border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Entry Price</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.15rem' }}>
+                      ₹{ai.entry_price?.toFixed(2) || (ai.entry ? ((ai.entry.min + ai.entry.max)/2).toFixed(2) : '--')}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.65rem', border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Stop Loss</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.15rem', color: 'var(--danger)' }}>
+                      ₹{ai.stop_loss?.toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.65rem', border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Targets</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.15rem', color: 'var(--success)' }}>
+                      {ai.targets?.map(t => `₹${t.toFixed(1)}`).join(' | ') || '--'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div style={{ padding: '0.65rem', border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Holding Period</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.15rem' }}>
+                      {ai.holding_period || '--'}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.65rem', border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Suggested Position Size</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '0.15rem', color: 'var(--info)' }}>
+                      {ai.position_size || '--'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Risk Engine Calculations */}
+                {ai.risk_metrics && (
+                  <div style={{ padding: '0.85rem', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '8px', marginBottom: '1.25rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--info)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>PORTFOLIO RISK & SIZING ENGINE</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.78rem' }}>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>ATR Position Size: </span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{ai.risk_metrics.suggested_qty} shares</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>Suggested Allocation: </span>
+                        <strong style={{ color: 'var(--text-primary)' }}>₹{ai.risk_metrics.suggested_allocation?.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>Cash Exposure: </span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{ai.risk_metrics.cash_exposure_pct}%</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>Max Drawdown Risk: </span>
+                        <strong style={{ color: 'var(--danger)' }}>{ai.risk_metrics.max_drawdown_risk_pct}%</strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rationale Breakdowns */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {(ai.technical_summary || (ai.rationale && ai.rationale.technical)) && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--info)' }}>TECHNICAL SUMMARY</span>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                        {ai.technical_summary || (ai.rationale && ai.rationale.technical)}
+                      </p>
+                    </div>
+                  )}
+                  {(ai.fundamental_summary || (ai.rationale && ai.rationale.fundamental)) && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--success)' }}>FUNDAMENTAL SUMMARY</span>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                        {ai.fundamental_summary || (ai.rationale && ai.rationale.fundamental)}
+                      </p>
+                    </div>
+                  )}
+                  {(ai.news_summary || (ai.rationale && ai.rationale.news)) && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--warning)' }}>NEWS SUMMARY</span>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                        {ai.news_summary || (ai.rationale && ai.rationale.news)}
+                      </p>
+                    </div>
+                  )}
+                  {(ai.portfolio_advice || (ai.rationale && ai.rationale.risk)) && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--danger)' }}>PORTFOLIO ADVICE</span>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                        {ai.portfolio_advice || (ai.rationale && ai.rationale.risk)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {/* AI Consensus & Self-Evaluation metrics (Task 5) */}
+                {ai.expected_success_probability !== undefined && (
+                  <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--success)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.75rem' }}>AI STRATEGY COMMITTEE & SELF-EVALUATION</span>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div>Expected Win Probability: <strong className="text-bullish">{ai.expected_success_probability}%</strong></div>
+                        <div>Historical Setup Matches: <strong style={{ color: 'var(--text-primary)' }}>{ai.historical_similar_setups}</strong></div>
+                        <div>Backtest Pattern Match: <strong style={{ color: 'var(--info)' }}>{ai.backtest_match_pct}%</strong></div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div>Reasoning Depth Quality: <strong style={{ color: 'var(--text-primary)' }}>{ai.reasoning_quality_score}/100</strong></div>
+                        <div>Gating Rules Compliance: <strong className="text-bullish">{ai.decision_quality_score}/100</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Market & News Intelligence Engine (Premium Dashboard Panel - Desktop) */}
+            {ai.market_regime && (
+              <div className="card-panel" style={{ borderLeft: '4px solid var(--warning)', marginTop: '0rem' }}>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <TrendingUp size={16} className="text-warning" /> AI Market Intelligence & Sentiment Engine
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Market Regime</div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: '0.2rem', color: ai.market_regime.includes('Bull') ? 'var(--success)' : ai.market_regime.includes('Bear') ? 'var(--danger)' : 'var(--warning)' }}>
+                      {ai.market_regime.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Market Breadth</div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: '0.2rem', color: 'var(--info)' }}>
+                      {ai.market_breadth ? (ai.market_breadth * 100).toFixed(0) : '50'}% Adv
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Ann. Volatility</div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: '0.2rem' }}>
+                      {ai.volatility_annualized}%
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>News Sentiment</div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: '0.2rem', color: ai.news_sentiment === 'Bullish' ? 'var(--success)' : ai.news_sentiment === 'Bearish' ? 'var(--danger)' : 'var(--warning)' }}>
+                      {ai.news_sentiment?.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>News Impact Score</div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: '0.2rem', color: 'var(--info)' }}>
+                      {ai.news_impact_score}/100
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event Alerts (If any) */}
+                {ai.corporate_action_event_detected && (
+                  <div style={{ padding: '0.85rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.8rem' }}>
+                    <strong style={{ color: 'var(--danger)', display: 'block', marginBottom: '0.25rem' }}>⚠️ EVENT ALERT: UPCOMING CORPORATE EVENT DETECTED (NEXT 7 DAYS)</strong>
+                    <span style={{ color: 'var(--text-secondary)' }}>{ai.corporate_action_details}</span>
+                  </div>
+                )}
+
+                {/* Key Events / Opportunities / Risks Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', fontSize: '0.82rem', marginTop: '0.5rem' }}>
+                  {ai.key_events && ai.key_events.length > 0 && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--info)', display: 'block', marginBottom: '0.4rem', fontSize: '0.7rem', letterSpacing: '0.05em' }}>KEY NEWS EVENTS</span>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.key_events.map((e, idx) => <li key={idx} style={{ marginBottom: '0.25rem' }}>{e}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {ai.news_opportunities && ai.news_opportunities.length > 0 && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--success)', display: 'block', marginBottom: '0.4rem', fontSize: '0.7rem', letterSpacing: '0.05em' }}>AI IDENTIFIED OPPORTUNITIES</span>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.news_opportunities.map((o, idx) => <li key={idx} style={{ marginBottom: '0.25rem' }}>{o}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {ai.news_risks && ai.news_risks.length > 0 && (
+                    <div className="factor-box" style={{ background: 'rgba(255,255,255,0.01)', margin: 0 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--danger)', display: 'block', marginBottom: '0.4rem', fontSize: '0.7rem', letterSpacing: '0.05em' }}>AI IDENTIFIED RISKS</span>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        {ai.news_risks.map((r, idx) => <li key={idx} style={{ marginBottom: '0.25rem' }}>{r}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Technical indicators grid */}
             <div className="card-panel">
               <h3 className="section-title"><BarChart3 size={16} /> Technical Indicators</h3>
@@ -1170,46 +1632,14 @@ export default function StockDetail({
                           );
                         })()}
                       </div>
-
-                      <button 
-                        className="flat-btn" 
-                        style={{ background: 'none', border: '1px solid var(--danger-border)', color: 'var(--danger)', height: '28px', fontSize: '0.7rem' }}
-                        onClick={() => {
-                          onRemoveHolding(detailData.ticker);
-                        }}
-                      >
-                        Clear Position
-                      </button>
+                      
+                      <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem' }}>Broker Position</span>
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleHoldingSubmit} className="form-inline" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'stretch' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                      <div className="form-input-group" style={{ flex: 1 }}>
-                        <label>Quantity</label>
-                        <input 
-                          type="number" 
-                          placeholder="e.g. 50" 
-                          value={qtyInput}
-                          onChange={(e) => setQtyInput(e.target.value)}
-                          required
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                      <div className="form-input-group" style={{ flex: 1 }}>
-                        <label>Entry Price (₹)</label>
-                        <input 
-                          type="number" 
-                          placeholder="Average price"
-                          value={costInput}
-                          onChange={(e) => setCostInput(e.target.value)}
-                          required
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                    </div>
-                    <button type="submit" className="flat-btn" style={{ width: '100%' }}>Add Position</button>
-                  </form>
+                  <div style={{ padding: '0.5rem 0.25rem', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                    <p style={{ margin: 0 }}>You do not own shares of this asset in your Upstox broker account.</p>
+                  </div>
                 )}
               </div>
             )}

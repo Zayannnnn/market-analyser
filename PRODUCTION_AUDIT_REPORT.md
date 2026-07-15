@@ -45,7 +45,7 @@ The interface was visual-tested against the target responsive widths:
 
 ## 4. Environment Parameters Summary
 
-*   **Production Host Target**: Railway (Backend), Vercel (Frontend)
+*   **Production Host Target**: Firebase Cloud Functions (Backend), Vercel (Frontend)
 *   **Firebase Account ID**: `market-analyser-dc39c`
 *   **Telegram Bot Recipient**: Chat ID `8285924285`
 *   **Active Config Location**: [backend/.env](file:///Users/favasev/Desktop/MARKET%20ANALYSER/backend/.env)

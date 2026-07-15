@@ -24,6 +24,13 @@ def run_agent_pipeline_job():
     """
     logger.info("Executing background scheduler stock analysis pipeline.")
     try:
+        # Run token validation check first (Task 2 check every 15 minutes)
+        try:
+            from app.services.health_monitor import validate_upstox_token
+            validate_upstox_token()
+        except Exception as auth_err:
+            logger.error(f"Error validating token in scheduled pipeline job: {auth_err}")
+
         # Agent 1: Scrape & Match news
         clean_news = collect_and_match_news()
         
@@ -77,9 +84,10 @@ def run_agent_pipeline_job():
         return []
 
 def init_scheduler():
-    """Initializes and runs APscheduler interval loops (15 minutes)."""
+    """Initializes and runs APscheduler interval loops and cron events."""
     scheduler = BackgroundScheduler()
-    # Add interval loop
+    
+    # 1. Pipeline interval check (every 15 mins)
     scheduler.add_job(
         run_agent_pipeline_job,
         'interval',
@@ -87,7 +95,8 @@ def init_scheduler():
         id='agent_pipeline_job',
         replace_existing=True
     )
-    # Add weekly cron loop on Sunday 9:00 AM IST (3:30 AM UTC)
+    
+    # 2. Sunday Weekly report (09:00 IST / 03:30 UTC)
     try:
         scheduler.add_job(
             send_weekly_report,
@@ -98,25 +107,90 @@ def init_scheduler():
             id='weekly_report_job',
             replace_existing=True
         )
-        logger.info("Scheduled weekly Telegram report cron job for Sunday 9:00 IST (3:30 UTC).")
     except Exception as e:
-        logger.error(f"Failed to schedule weekly report cron job: {e}")
+        logger.error(f"Failed to schedule weekly report job: {e}")
         
-    # Add daily close report cron job for Mon-Fri at 15:30 IST (10:00 UTC)
+    # 3. Morning Health Check (08:45 IST / 03:15 UTC Mon-Fri)
     try:
+        from app.services.paper_scheduler import run_health_checks
         scheduler.add_job(
-            send_daily_close_report,
+            run_health_checks,
+            'cron',
+            day_of_week='mon-fri',
+            hour=3,
+            minute=15,
+            id='morning_health_check_job',
+            replace_existing=True
+        )
+        logger.info("Scheduled Morning Health Check at 08:45 IST.")
+    except Exception as e:
+        logger.error(f"Failed to schedule morning health checks job: {e}")
+        
+    # 4. Watchlist Scanner and AI recommendations (09:15 IST / 03:45 UTC Mon-Fri)
+    try:
+        from app.services.paper_scheduler import execute_watchlist_auto_scan
+        scheduler.add_job(
+            execute_watchlist_auto_scan,
+            'cron',
+            day_of_week='mon-fri',
+            hour=3,
+            minute=45,
+            id='watchlist_scanner_job',
+            replace_existing=True
+        )
+        logger.info("Scheduled Watchlist Auto-Scanner at 09:15 IST.")
+    except Exception as e:
+        logger.error(f"Failed to schedule watchlist scanner job: {e}")
+        
+    # 5. Live Market Scan & Target/SL Tracker (Every 30 mins during market hours Mon-Fri)
+    # Mon-Fri between 09:15 and 15:30 IST (03:45 to 10:00 UTC)
+    try:
+        from app.services.paper_scheduler import run_paper_trade_automation
+        scheduler.add_job(
+            run_paper_trade_automation,
+            'cron',
+            day_of_week='mon-fri',
+            hour='3-10',
+            minute='15,45',
+            id='live_market_tracker_job',
+            replace_existing=True
+        )
+        logger.info("Scheduled Live Market Tracker every 30 minutes during market hours.")
+    except Exception as e:
+        logger.error(f"Failed to schedule market tracker job: {e}")
+        
+    # 6. End of Day Close report (15:30 IST / 10:00 UTC Mon-Fri)
+    try:
+        from app.services.paper_scheduler import run_end_of_day_report
+        scheduler.add_job(
+            run_end_of_day_report,
             'cron',
             day_of_week='mon-fri',
             hour=10,
             minute=0,
-            id='daily_close_report_job',
+            id='end_of_day_report_job',
             replace_existing=True
         )
-        logger.info("Scheduled daily close report cron job for Mon-Fri 15:30 IST (10:00 UTC).")
+        logger.info("Scheduled End of Day Close report at 15:30 IST.")
     except Exception as e:
-        logger.error(f"Failed to schedule daily close report cron job: {e}")
+        logger.error(f"Failed to schedule EOD close report job: {e}")
+        
+    # 7. Evening AI Learning Report (20:00 IST / 14:30 UTC Mon-Fri)
+    try:
+        from app.services.paper_scheduler import run_evening_learning_report
+        scheduler.add_job(
+            run_evening_learning_report,
+            'cron',
+            day_of_week='mon-fri',
+            hour=14,
+            minute=30,
+            id='evening_learning_report_job',
+            replace_existing=True
+        )
+        logger.info("Scheduled Evening AI Learning report at 20:00 IST.")
+    except Exception as e:
+        logger.error(f"Failed to schedule AI learning report job: {e}")
         
     scheduler.start()
-    logger.info("Background APscheduler started. Stock pipeline running every 15 minutes.")
+    logger.info("Background APscheduler started successfully.")
     return scheduler

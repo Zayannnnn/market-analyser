@@ -22,6 +22,13 @@ INDEX_MAP = {
         "trading_symbol": "Nifty 50",
         "name": "Nifty 50 Index"
     },
+    "^NSEI": {
+        "instrument_key": "NSE_INDEX|Nifty 50",
+        "isin": "NIFTY50",
+        "exchange": "NSE",
+        "trading_symbol": "Nifty 50",
+        "name": "Nifty 50 Index"
+    },
     "BANKNIFTY": {
         "instrument_key": "NSE_INDEX|Nifty Bank",
         "isin": "BANKNIFTY",
@@ -29,7 +36,21 @@ INDEX_MAP = {
         "trading_symbol": "Nifty Bank",
         "name": "Nifty Bank Index"
     },
+    "^NSEBANK": {
+        "instrument_key": "NSE_INDEX|Nifty Bank",
+        "isin": "BANKNIFTY",
+        "exchange": "NSE",
+        "trading_symbol": "Nifty Bank",
+        "name": "Nifty Bank Index"
+    },
     "SENSEX": {
+        "instrument_key": "BSE_INDEX|SENSEX",
+        "isin": "SENSEX",
+        "exchange": "BSE",
+        "trading_symbol": "SENSEX",
+        "name": "SENSEX Index"
+    },
+    "^BSESN": {
         "instrument_key": "BSE_INDEX|SENSEX",
         "isin": "SENSEX",
         "exchange": "BSE",

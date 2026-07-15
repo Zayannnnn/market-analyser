@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Bookmark, Clock, Search, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bookmark, Clock, Search, AlertCircle, Activity, Play, Cpu, PieChart, Layers, Shield, Server, Settings, Globe, Brain, BookOpen, Award } from 'lucide-react';
 import Dashboard from './components/Dashboard.tsx';
 import StockDetail from './components/StockDetail.tsx';
 import IndexDetail from './components/IndexDetail.tsx';
+import PortfolioIntelligence from './components/PortfolioIntelligence.tsx';
+import StrategyLab from './components/StrategyLab.tsx';
+import PaperTradingDashboard from './components/PaperTradingDashboard.tsx';
+import LiveTradingMonitor from './components/LiveTradingMonitor.tsx';
+import PortfolioManager from './components/PortfolioManager.tsx';
+import OpportunityCenter from './components/OpportunityCenter.tsx';
+import LiveExecution from './components/LiveExecution.tsx';
+import ProductionHealth from './components/ProductionHealth.tsx';
+import UserSettings from './components/UserSettings.tsx';
+import PersonalCIO from './components/PersonalCIO.tsx';
+import AILearning from './components/AILearning.tsx';
+import MarketIntelligence from './components/MarketIntelligence.tsx';
+import ResearchEngine from './components/ResearchEngine.tsx';
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -40,9 +53,7 @@ class ErrorBoundary extends React.Component<
 
 
 // Resolve host URL
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:8000/api' 
-  : '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface Subscores {
   fundamentals: number;
@@ -205,7 +216,7 @@ export default function App() {
   const [activeStocks, setActiveStocks] = useState<StockItem[]>([]);
   const [marketSummary, setMarketSummary] = useState<MarketSummary | null>(null);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
-  const [view, setView] = useState<'dashboard' | 'portfolio' | 'watchlist'>('dashboard');
+  const [view, setView] = useState<'cio' | 'dashboard' | 'portfolio' | 'watchlist' | 'strategy_lab' | 'paper_trading' | 'monitor' | 'manager' | 'opportunity' | 'live' | 'health' | 'settings' | 'learning' | 'macro' | 'research'>('cio');
   const [halalOnly, setHalalOnly] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -215,9 +226,44 @@ export default function App() {
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem('watchlist') || '[]');
   });
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => {
-    return JSON.parse(localStorage.getItem('portfolio') || '[]');
+  const [livePortfolio, setLivePortfolio] = useState<any>({
+    holdings: [],
+    cash_available: 0.0,
+    realized_pnl: 0.0,
+    unrealized_pnl: 0.0,
+    authenticated: false,
+    error: "Loading portfolio..."
   });
+
+  const portfolio = (livePortfolio.holdings || []).map((h: any) => ({
+    ticker: h.trading_symbol || h.ticker || h.tradingsymbol || '',
+    quantity: h.quantity || 0,
+    entryPrice: h.average_price || 0.0
+  }));
+
+
+  const [watchlistRankings, setWatchlistRankings] = useState<any[]>([]);
+  const [loadingWatchlist, setLoadingWatchlist] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (watchlist.length === 0) {
+      setWatchlistRankings([]);
+      return;
+    }
+    setLoadingWatchlist(true);
+    fetch(`${API_BASE}/watchlist/rank?tickers=${watchlist.join(',')}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setWatchlistRankings(data.rankings || []);
+        }
+        setLoadingWatchlist(false);
+      })
+      .catch(err => {
+        console.error("Error loading watchlist rankings:", err);
+        setLoadingWatchlist(false);
+      });
+  }, [watchlist]);
 
   // Custom add stock form input
   const [addStockInput, setAddStockInput] = useState({ ticker: '', name: '', quality: '75' });
@@ -249,9 +295,7 @@ export default function App() {
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
   }, [watchlist]);
 
-  useEffect(() => {
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
-  }, [portfolio]);
+
 
   // Load API Data
   const loadData = async () => {
@@ -283,6 +327,24 @@ export default function App() {
         setNewsArticles(newsData.articles || []);
       } else {
         console.error("Failed to fetch trending news");
+      }
+
+      // 4. Fetch Live Portfolio (Single Source of Truth)
+      const portRes = await fetch(`${API_BASE}/portfolio/intelligence`);
+      if (portRes.ok) {
+        const portData = await portRes.json();
+        if (portData.status === 'success' && portData.portfolio) {
+          setLivePortfolio(portData.portfolio);
+        } else {
+          setLivePortfolio({
+            holdings: [],
+            cash_available: 0.0,
+            realized_pnl: 0.0,
+            unrealized_pnl: 0.0,
+            authenticated: false,
+            error: "Broker authentication required."
+          });
+        }
       }
     } catch (e) {
       console.error("API loading failed: ", e);
@@ -501,6 +563,27 @@ export default function App() {
 
           {/* Tabs */}
           <button 
+            className={`flat-btn nav-tab-btn ${view === 'cio' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('cio'); navigate('/'); }}
+          >
+            <Award size={13} /> Personal CIO
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'learning' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('learning'); navigate('/'); }}
+          >
+            <Brain size={13} /> AI Learning
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'macro' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('macro'); navigate('/'); }}
+          >
+            <Globe size={13} /> Market Intelligence
+          </button>
+          <button 
             className={`flat-btn nav-tab-btn ${view === 'dashboard' ? '' : 'flat-btn-outline'}`}
             style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
             onClick={() => { setView('dashboard'); navigate('/'); }}
@@ -520,6 +603,69 @@ export default function App() {
             onClick={() => { setView('watchlist'); navigate('/'); }}
           >
             <Bookmark size={13} /> Watchlist ({watchlist.length})
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'research' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('research'); navigate('/'); }}
+          >
+            <BookOpen size={13} /> Research Engine
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'strategy_lab' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('strategy_lab'); navigate('/'); }}
+          >
+            <Activity size={13} /> Strategy Lab
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'paper_trading' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('paper_trading'); navigate('/'); }}
+          >
+            <Play size={13} /> Paper Trading
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'monitor' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('monitor'); navigate('/'); }}
+          >
+            <Cpu size={13} /> Monitor
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'manager' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('manager'); navigate('/'); }}
+          >
+            <PieChart size={13} /> AI Portfolio Manager
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'opportunity' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('opportunity'); navigate('/'); }}
+          >
+            <Layers size={13} /> Opportunity Center
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'live' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('live'); navigate('/'); }}
+          >
+            <Shield size={13} /> Live Execution
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'health' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('health'); navigate('/'); }}
+          >
+            <Server size={13} /> Production Health
+          </button>
+          <button 
+            className={`flat-btn nav-tab-btn ${view === 'settings' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('settings'); navigate('/'); }}
+          >
+            <Settings size={13} /> Settings
           </button>
 
           <div className="user-profile" title="User Profile">
@@ -599,6 +745,22 @@ export default function App() {
             path="*"
             element={
               <>
+                {view === 'cio' && (
+                  <div className="dashboard-container">
+                    <PersonalCIO apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'learning' && (
+                  <div className="dashboard-container">
+                    <AILearning apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'macro' && (
+                  <div className="dashboard-container">
+                    <MarketIntelligence apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+
                 {view === 'dashboard' && (
                   <Dashboard
                     stocks={activeStocks}
@@ -613,12 +775,16 @@ export default function App() {
                     onAddStock={handleAddStock}
                     userId={userId}
                     onShowToast={triggerToast}
+                    apiBase={API_BASE}
                   />
                 )}
 
                 {view === 'watchlist' && (
                   <div className="dashboard-container">
-                    <h2 className="section-title"><Bookmark size={18} /> Watchlist Monitor</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <h2 className="section-title" style={{ margin: 0 }}><Bookmark size={18} /> Watchlist Rankings & Relative Strength</h2>
+                      {loadingWatchlist && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Ranking assets...</span>}
+                    </div>
                     <div className="card-panel">
                       {watchlist.length > 0 ? (
                         <div className="table-container">
@@ -626,46 +792,47 @@ export default function App() {
                             <thead>
                               <tr>
                                 <th>Ticker</th>
-                                <th>Company Name</th>
-                                <th>Current Price</th>
-                                <th>Change</th>
-                                <th>AI Score</th>
-                                <th>Status</th>
+                                <th>Price</th>
+                                <th>Tech Score</th>
+                                <th>News Score</th>
+                                <th>Regime Score</th>
+                                <th>Risk Score</th>
+                                <th>Momentum</th>
+                                <th>Rel Strength</th>
+                                <th>Overall AI Score</th>
+                                <th>Sentiment</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {watchlist.map(ticker => {
-                                const stock = activeStocks.find(s => s.ticker === ticker);
-                                if (!stock) {
-                                  return (
-                                    <tr key={ticker} onClick={() => openStock(ticker)}>
-                                      <td className="table-ticker">{ticker}</td>
-                                      <td>Loading custom stock ticker...</td>
-                                      <td>--</td>
-                                      <td>--</td>
-                                      <td>--</td>
-                                      <td><span className="badge badge-info">EXTERNAL</span></td>
-                                    </tr>
-                                  );
-                                }
-                                const isChangeBearish = stock.change.includes('-');
+                              {watchlistRankings.map((item: any) => {
+                                const isChangeBearish = item.change < 0;
                                 return (
-                                  <tr key={ticker} onClick={() => openStock(stock.ticker)}>
-                                    <td className="table-ticker">{stock.ticker}</td>
-                                    <td>{stock.company_name}</td>
-                                    <td className="table-price">{stock.price}</td>
-                                    <td className={isChangeBearish ? 'text-bearish' : 'text-bullish'} style={{ fontWeight: 600 }}>
-                                      {stock.change}
+                                  <tr key={item.ticker} onClick={() => openStock(item.ticker)}>
+                                    <td className="table-ticker">
+                                      {item.ticker}
+                                      <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>
+                                        {item.company_name}
+                                      </span>
                                     </td>
-                                    <td className="table-score">{stock.score}/100</td>
+                                    <td className="table-price">
+                                      ₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                      <span className={isChangeBearish ? 'text-bearish' : 'text-bullish'} style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                        {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}%
+                                      </span>
+                                    </td>
+                                    <td>{item.technical_score}/100</td>
+                                    <td>{item.news_score}/100</td>
+                                    <td>{item.market_regime_score}/100</td>
+                                    <td>{item.risk_score}/100</td>
+                                    <td>{item.momentum} (RSI)</td>
+                                    <td className={item.relative_strength >= 0 ? 'text-bullish' : 'text-bearish'} style={{ fontWeight: 600 }}>
+                                      {item.relative_strength >= 0 ? '+' : ''}{item.relative_strength.toFixed(2)}%
+                                    </td>
+                                    <td className="table-score" style={{ fontSize: '0.9rem', fontWeight: 800 }}>{item.overall_ai_score}/100</td>
                                     <td>
-                                      {stock.score >= 75 ? (
-                                        <span className="badge badge-success">BUY</span>
-                                      ) : stock.score >= 55 ? (
-                                        <span className="badge badge-warning">HOLD</span>
-                                      ) : (
-                                        <span className="badge badge-danger">AVOID</span>
-                                      )}
+                                      <span className={`badge ${item.news_sentiment === 'Bullish' ? 'badge-success' : item.news_sentiment === 'Bearish' ? 'badge-danger' : 'badge-warning'}`}>
+                                        {item.news_sentiment.toUpperCase()}
+                                      </span>
                                     </td>
                                   </tr>
                                 );
@@ -687,62 +854,53 @@ export default function App() {
                 )}
 
                 {view === 'portfolio' && (
+                  <div className="dashboard-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <PortfolioIntelligence portfolio={portfolio} activeStocks={activeStocks} apiBase={API_BASE} />
+                  </div>
+                )}
+                {view === 'strategy_lab' && (
                   <div className="dashboard-container">
-                    <h2 className="section-title"><Briefcase size={18} /> Asset Holdings & Allocations</h2>
-                    <div className="card-panel">
-                      {portfolio.length > 0 ? (
-                        <div className="table-container">
-                          <table className="premium-table">
-                            <thead>
-                              <tr>
-                                <th>Ticker</th>
-                                <th>Shares Held</th>
-                                <th>Avg Entry Cost</th>
-                                <th>Market Price</th>
-                                <th>Invested Capital</th>
-                                <th>Current Value</th>
-                                <th>Profit / Loss</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {portfolio.map(item => {
-                                const stockRef = activeStocks.find(s => s.ticker === item.ticker);
-                                const marketPriceVal = stockRef
-                                  ? parseFloat(stockRef.price.replace(/[^\d.]/g, ''))
-                                  : item.entryPrice;
-
-                                const totalCost = item.quantity * item.entryPrice;
-                                const currentValue = item.quantity * marketPriceVal;
-                                const profitVal = currentValue - totalCost;
-                                const profitPct = totalCost > 0 ? (profitVal / totalCost) * 100 : 0;
-
-                                return (
-                                  <tr key={item.ticker} onClick={() => stockRef && openStock(stockRef.ticker)}>
-                                    <td className="table-ticker">{item.ticker}</td>
-                                    <td>{item.quantity}</td>
-                                    <td>₹{item.entryPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td className="table-price">₹{marketPriceVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td>₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td className="table-price">₹{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td className={profitVal >= 0 ? 'text-bullish' : 'text-bearish'} style={{ fontWeight: 700 }}>
-                                      {profitVal >= 0 ? '+' : ''}₹{profitVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({profitVal >= 0 ? '+' : ''}{profitPct.toFixed(2)}%)
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="empty-state">
-                          <Briefcase size={40} className="empty-state-icon" />
-                          <h3>No Open Positions Tracked</h3>
-                          <p style={{ fontSize: '0.85rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
-                            Add shares inside the stock details page of any asset to track your cost basis, current valuations, and profit analytics.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <StrategyLab activeStocks={activeStocks} apiBase={API_BASE} />
+                  </div>
+                )}
+                {view === 'paper_trading' && (
+                  <div className="dashboard-container">
+                    <PaperTradingDashboard apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'monitor' && (
+                  <div className="dashboard-container">
+                    <LiveTradingMonitor apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'manager' && (
+                  <div className="dashboard-container">
+                    <PortfolioManager apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'opportunity' && (
+                  <div className="dashboard-container">
+                    <OpportunityCenter apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'live' && (
+                  <div className="dashboard-container">
+                    <LiveExecution apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'health' && (
+                  <div className="dashboard-container">
+                    <ProductionHealth apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'settings' && (
+                  <div className="dashboard-container">
+                    <UserSettings apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
+                  </div>
+                )}
+                {view === 'research' && (
+                  <div className="dashboard-container">
+                    <ResearchEngine activeStocks={activeStocks} apiBase={API_BASE} />
                   </div>
                 )}
               </>
@@ -759,6 +917,27 @@ export default function App() {
 
       {/* Sticky Bottom Navigation for Mobile */}
       <div className="bottom-nav">
+        <button 
+          className={`bottom-nav-item ${view === 'cio' ? 'active' : ''}`}
+          onClick={() => { setView('cio'); navigate('/'); }}
+        >
+          <Award size={20} />
+          <span>CIO</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'learning' ? 'active' : ''}`}
+          onClick={() => { setView('learning'); navigate('/'); }}
+        >
+          <Brain size={20} />
+          <span>Learning</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'macro' ? 'active' : ''}`}
+          onClick={() => { setView('macro'); navigate('/'); }}
+        >
+          <Globe size={20} />
+          <span>Macro</span>
+        </button>
         <button 
           className={`bottom-nav-item ${view === 'dashboard' ? 'active' : ''}`}
           onClick={() => { setView('dashboard'); navigate('/'); }}
@@ -779,6 +958,62 @@ export default function App() {
         >
           <Bookmark size={20} />
           <span>Watchlist</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'strategy_lab' ? 'active' : ''}`}
+          onClick={() => { setView('strategy_lab'); navigate('/'); }}
+        >
+          <Activity size={20} />
+          <span>Lab</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'paper_trading' ? 'active' : ''}`}
+          onClick={() => { setView('paper_trading'); navigate('/'); }}
+        >
+          <Play size={20} />
+          <span>Paper</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'monitor' ? 'active' : ''}`}
+          onClick={() => { setView('monitor'); navigate('/'); }}
+        >
+          <Cpu size={20} />
+          <span>Monitor</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'manager' ? 'active' : ''}`}
+          onClick={() => { setView('manager'); navigate('/'); }}
+        >
+          <PieChart size={20} />
+          <span>Manager</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'opportunity' ? 'active' : ''}`}
+          onClick={() => { setView('opportunity'); navigate('/'); }}
+        >
+          <Layers size={20} />
+          <span>Opportunity</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'live' ? 'active' : ''}`}
+          onClick={() => { setView('live'); navigate('/'); }}
+        >
+          <Shield size={20} />
+          <span>Live</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'health' ? 'active' : ''}`}
+          onClick={() => { setView('health'); navigate('/'); }}
+        >
+          <Server size={20} />
+          <span>Health</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'settings' ? 'active' : ''}`}
+          onClick={() => { setView('settings'); navigate('/'); }}
+        >
+          <Settings size={20} />
+          <span>Settings</span>
         </button>
       </div>
     </div>

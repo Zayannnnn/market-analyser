@@ -45,7 +45,7 @@ class UpstoxClient:
             
         return None
         
-    def fetch_historical_candles(self, ticker: str, interval: str = "day") -> Optional[Dict[str, Any]]:
+    def fetch_historical_candles(self, ticker: str, interval: str = "day", days_back: int = 500) -> Optional[Dict[str, Any]]:
         """Queries Upstox API for historical daily candles with retries and timeout."""
         token = self.get_access_token()
         if not token:
@@ -65,8 +65,8 @@ class UpstoxClient:
         instrument_key = inst["instrument_key"]
             
         today = datetime.date.today()
-        # Fetch 500 calendar days (approx 350 trading days) to ensure sufficient history for technical indicators
-        from_date = today - datetime.timedelta(days=500)
+        # Fetch dynamic calendar days
+        from_date = today - datetime.timedelta(days=days_back)
         to_date_str = today.strftime("%Y-%m-%d")
         from_date_str = from_date.strftime("%Y-%m-%d")
         

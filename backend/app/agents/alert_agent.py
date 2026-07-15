@@ -99,7 +99,7 @@ def trigger_telegram_alert(stock: Dict[str, Any], avg_sentiment: float) -> bool:
 {news_summary}
 
 <i>Generated: {timestamp_now}</i>
-<a href="{settings.dashboard_url}">Open AORA Engine Terminal</a>"""
+<a href="{settings.resolved_dashboard_url}">Open AORA Engine Terminal</a>"""
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
@@ -259,7 +259,7 @@ def send_daily_close_report() -> bool:
             message_lines.append(f"• AI Reason: {reason}")
             message_lines.append(f"")
             
-        message_lines.append(f"<a href=\"{settings.dashboard_url}\">Access AORA Engine Terminal</a>")
+        message_lines.append(f"<a href=\"{settings.resolved_dashboard_url}\">Access AORA Engine Terminal</a>")
         message_text = "\n".join(message_lines)
         
         url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -307,7 +307,7 @@ An active stock intelligence alert has reached its target score!
 <b>Target AI Score:</b> {target_score}/100
 
 <i>This alert is now marked as completed.</i>
-<a href="{settings.dashboard_url}">Open AORA Engine Terminal</a>"""
+<a href="{settings.resolved_dashboard_url}">Open AORA Engine Terminal</a>"""
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {

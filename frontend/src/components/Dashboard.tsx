@@ -169,6 +169,7 @@ interface DashboardProps {
   onAddStock: (e: React.FormEvent) => void;
   userId: string;
   onShowToast: (message: string, isError?: boolean) => void;
+  apiBase?: string;
 }
 
 type SortKey = 'rank' | 'ticker' | 'score' | 'price' | 'change' | 'upside';
@@ -186,11 +187,42 @@ export default function Dashboard({
   setAddStockInput,
   onAddStock,
   userId,
-  onShowToast
+  onShowToast,
+  apiBase
 }: DashboardProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  interface AuthStatus {
+    authentication_status: 'CONNECTED' | 'EXPIRED' | 'CONNECTING' | 'ERROR' | 'UNKNOWN';
+    last_successful_authentication: number | null;
+    last_authentication_time: number | null;
+    token_age_seconds: number | null;
+    token_age_str: string;
+    expected_expiry_str: string;
+    live_trading_status: 'READY' | 'PAUSED';
+    last_health_check_str: string;
+    login_url: string;
+  }
+
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+
+  useEffect(() => {
+    fetchAuthStatus();
+  }, []);
+
+  const fetchAuthStatus = async () => {
+    try {
+      const res = await fetch(`${apiBase || ''}/api/upstox/auth-status`);
+      if (res.ok) {
+        const payload = await res.json();
+        setAuthStatus(payload);
+      }
+    } catch (e) {
+      console.error("Failed to fetch auth status", e);
+    }
+  };
 
   // User Alert Setup form states
   const [alertCompanyName, setAlertCompanyName] = useState<string>('');
@@ -222,9 +254,7 @@ export default function Dashboard({
     onShowToast(`Configuring Telegram alert for ${alertTicker}...`);
 
     try {
-      const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:8000/api' 
-        : '/api';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
       
       const res = await fetch(`${apiBase}/alerts/setup?user_id=${userId}&ticker=${alertTicker}&target_score=${scoreVal}`, {
         method: "POST"
@@ -339,6 +369,126 @@ export default function Dashboard({
 
   return (
     <div className="dashboard-container">
+      
+      {/* Upstox Authentication Status Card (Task 5) */}
+      <div className="card-panel" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(21, 23, 30, 0.9) 0%, rgba(27, 30, 40, 0.95) 100%)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Header row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: authStatus?.authentication_status === 'CONNECTED' 
+                  ? 'rgba(16, 185, 129, 0.1)' 
+                  : authStatus?.authentication_status === 'CONNECTING'
+                  ? 'rgba(245, 158, 11, 0.1)'
+                  : 'rgba(239, 68, 68, 0.1)'
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>
+                  {authStatus?.authentication_status === 'CONNECTED' ? '🟢' : authStatus?.authentication_status === 'CONNECTING' ? '🟡' : '🔴'}
+                </span>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Broker Integration: Upstox</h3>
+                <p style={{ margin: '0.1rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Centralized dynamic session verification & execution safety checks</p>
+              </div>
+            </div>
+            
+            <button 
+              className="flat-btn" 
+              style={{
+                height: '32px',
+                padding: '0 1rem',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: authStatus?.authentication_status === 'CONNECTED' ? 'transparent' : 'var(--primary)',
+                border: authStatus?.authentication_status === 'CONNECTED' ? '1px solid var(--border-color)' : 'none'
+              }}
+              onClick={() => {
+                const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+                const base = apiBaseUrl.endsWith('/api') ? apiBaseUrl.substring(0, apiBaseUrl.lastIndexOf('/api')) : apiBaseUrl;
+                // Force a redirect to login
+                window.location.href = `${base}/api/upstox/login?force=true`;
+              }}
+            >
+              {authStatus?.authentication_status === 'CONNECTED' ? 'Reconnect Broker' : 'Authenticate Session'}
+            </button>
+          </div>
+
+          {/* Telemetry grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '1rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+            paddingTop: '1rem'
+          }}>
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Broker Status</div>
+              <div style={{ marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span className={`badge ${
+                  authStatus?.authentication_status === 'CONNECTED' 
+                    ? 'badge-success' 
+                    : authStatus?.authentication_status === 'CONNECTING'
+                    ? 'badge-warning'
+                    : 'badge-danger'
+                }`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                  {authStatus?.authentication_status || 'UNKNOWN'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Last Authentication</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '0.2rem' }}>
+                {authStatus?.last_successful_authentication 
+                  ? new Date(authStatus.last_successful_authentication * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  : 'Never'}
+              </div>
+            </div>
+
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Token Age</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '0.2rem' }}>{authStatus?.token_age_str || 'Unknown'}</div>
+            </div>
+
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Expected Expiry</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '0.2rem', color: authStatus?.authentication_status === 'CONNECTED' ? 'var(--text-primary)' : 'var(--danger)' }}>
+                {authStatus?.expected_expiry_str 
+                  ? new Date(authStatus.expected_expiry_str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                  : 'Expired'}
+              </div>
+            </div>
+
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Live Trading</div>
+              <div style={{ marginTop: '0.2rem' }}>
+                <span className={`badge ${authStatus?.live_trading_status === 'READY' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                  {authStatus?.live_trading_status || 'PAUSED'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Last Health Check</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {authStatus?.last_health_check_str 
+                  ? new Date(authStatus.last_health_check_str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : 'Pending'}
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
       
       {/* 1. Market Overview Indices */}
       <section>

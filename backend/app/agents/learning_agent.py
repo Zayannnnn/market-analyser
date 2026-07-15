@@ -373,7 +373,7 @@ def send_weekly_report() -> bool:
 • Evaluations run: {total_evals}
 
 <i>Generated: {timestamp_str}</i>
-<a href="{settings.dashboard_url}">Open Trading Dashboard</a>"""
+<a href="{settings.resolved_dashboard_url}">Open Trading Dashboard</a>"""
 
         url = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {

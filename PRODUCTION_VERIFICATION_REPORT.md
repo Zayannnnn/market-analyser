@@ -6,9 +6,9 @@ This report documents the live production status and audit verification of the *
 
 ## 1. Deployment Details
 
-*   **Railway Deployment URL**: [https://market-analyser-production.up.railway.app](https://market-analyser-production.up.railway.app)
-*   **Swagger API UI**: [https://market-analyser-production.up.railway.app/docs](https://market-analyser-production.up.railway.app/docs)
-*   **OpenAPI Schema JSON**: [https://market-analyser-production.up.railway.app/openapi.json](https://market-analyser-production.up.railway.app/openapi.json)
+*   **Firebase Deployment URL**: [https://us-central1-market-analyser-dc39c.cloudfunctions.net/app](https://us-central1-market-analyser-dc39c.cloudfunctions.net/app)
+*   **Swagger API UI**: [https://us-central1-market-analyser-dc39c.cloudfunctions.net/app/docs](https://us-central1-market-analyser-dc39c.cloudfunctions.net/app/docs)
+*   **OpenAPI Schema JSON**: [https://us-central1-market-analyser-dc39c.cloudfunctions.net/app/openapi.json](https://us-central1-market-analyser-dc39c.cloudfunctions.net/app/openapi.json)
 *   **Git Commit Hash**: `0d673b71368ed5c2b71231b8e62b76711e627a3c`
 *   **Deployment Timestamp**: 2026-06-04 13:55:00 IST (08:25:00 UTC)
 
@@ -16,7 +16,7 @@ This report documents the live production status and audit verification of the *
 
 ## 2. API Endpoints Live Audit
 
-All core production endpoints were queried directly from the Railway server and successfully validated.
+All core production endpoints were queried directly from the Firebase server and successfully validated.
 
 ### A. Technical Refresh Pipeline (`GET /api/fetch-prices`)
 *   **Status**: `200 OK`
@@ -75,7 +75,7 @@ All core production endpoints were queried directly from the Railway server and 
 
 ## 3. Debug Endpoint Verification (`GET /api/debug/stock/{ticker}`)
 
-The newly declared debug endpoint was tested directly on the Railway production server. All indicators are calculated on real price series history, returning distinct and accurate values.
+The newly declared debug endpoint was tested directly on the Firebase production server. All indicators are calculated on real price series history, returning distinct and accurate values.
 
 ### A. RELIANCE (`GET /api/debug/stock/RELIANCE`)
 ```json

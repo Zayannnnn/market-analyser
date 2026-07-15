@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { createChart, LineSeries } from 'lightweight-charts';
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000/api'
-  : '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const TIMEFRAMES = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'MAX'] as const;
 type Timeframe = typeof TIMEFRAMES[number];
