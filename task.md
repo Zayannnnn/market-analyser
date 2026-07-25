@@ -44,13 +44,13 @@
 - [x] Verify zero leftover Yahoo/placeholder references in backend and frontend
 - [x] Create automated deployment helper script deploy.ps1 for Cloud Run and Vercel
 
-## Phase 4.1: Upstox Trading Service & AI Trade Review [IN PROGRESS]
-- [/] Create app/services/upstox_trading.py with place/cancel/modify/get order functions
-- [ ] Create app/services/order_logger.py to save attempts to Firestore
-- [ ] Create app/services/ai_trade_review.py for Gemini Flash review synthesis
-- [ ] Update app/models.py with pydantic schemas for requests, responses, and AI reviews
-- [ ] Implement FastApi routes in app/main.py
-- [ ] Build React frontend component frontend/src/components/TradingPanel.tsx
-- [ ] Register TradingPanel in frontend routes and UI navigation
-- [ ] Verify everything works E2E and run unit tests
+## Phase 4.1: Upstox Trading Service & AI Trade Review [COMPLETE]
+- [x] Create app/services/upstox_trading.py with place/cancel/modify/get order functions
+- [x] Create app/services/order_logger.py to save attempts to Firestore
+- [x] Create app/services/ai_trade_review.py for Gemini Flash review synthesis
+- [x] Update app/models.py with pydantic schemas for requests, responses, and AI reviews
+- [x] Implement FastApi routes in app/main.py
+- [x] Build React frontend component frontend/src/components/TradingPanel.tsx
+- [x] Register TradingPanel in frontend routes and UI navigation
+- [x] Verify everything works E2E and run unit tests
 
