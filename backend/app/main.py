@@ -1868,3 +1868,393 @@ def run_portfolio_strategy_backtests(ticker: str, days_back: int = 1825, initial
     except Exception as e:
         logger.error(f"Error running backtests for {ticker}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Real-Time Upstox Order Execution & AI Trade Review Routes ---
+
+from typing import Optional
+from app.models import (
+    TradeReviewRequest,
+    AITradeReviewResponse,
+    OrderPlacementRequest,
+    LimitOrderPlacementRequest,
+    OrderCancellationRequest,
+    OrderModificationRequest,
+    TradingActionResponse
+)
+
+@app.post("/api/trading/review", response_model=AITradeReviewResponse, tags=["Upstox Trading"])
+async def api_trade_review(request: TradeReviewRequest):
+    """Generates a comprehensive AI Trade Review using Gemini before execution."""
+    try:
+        from app.services.ai_trade_review import generate_ai_trade_review
+        review = await generate_ai_trade_review(
+            ticker=request.ticker,
+            quantity=request.quantity,
+            side=request.side,
+            price=request.price,
+            order_type=request.order_type
+        )
+        return review
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error generating AI Trade Review: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate AI Trade Review: {str(e)}")
+
+@app.post("/api/trading/buy", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_buy(request: OrderPlacementRequest):
+    """Executes a Real Market Buy order after safety limits verification."""
+    try:
+        from app.services.upstox_trading import place_market_buy, UpstoxAPIError
+        from app.services.portfolio_engine import validate_trade_constraints
+        from app.services.order_logger import log_order_attempt
+        from app.data_sources.market_data import get_market_data
+
+        # 1. Fetch current price
+        try:
+            mdata = get_market_data(request.ticker)
+            market_price = mdata.get("price", 0.0)
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Could not retrieve current market price for {request.ticker}")
+
+        # 2. Check safety guidelines
+        violations = await validate_trade_constraints(request.ticker, request.quantity, market_price, "BUY")
+        if violations:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="REJECTED_SAFETY",
+                broker_response=f"Safety Violations: {', '.join(violations)}"
+            )
+            raise HTTPException(status_code=400, detail=f"Safety Check Rejected: {', '.join(violations)}")
+
+        # 3. Execute Order
+        try:
+            res = await place_market_buy(request.ticker, request.quantity, product=request.product)
+            order_id = res.get("order_id")
+            
+            # Log successful placement
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="SUCCESS",
+                order_id=order_id,
+                broker_response=f"Successfully filled. Order ID: {order_id}"
+            )
+            return TradingActionResponse(status="success", order_id=order_id, message=f"Buy order placed. Order ID: {order_id}", details=res)
+        except UpstoxAPIError as uae:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="FAILED",
+                broker_response=uae.message,
+                error_code=uae.error_code
+            )
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error placing market buy: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/sell", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_sell(request: OrderPlacementRequest):
+    """Executes a Real Market Sell order after safety limits verification."""
+    try:
+        from app.services.upstox_trading import place_market_sell, UpstoxAPIError
+        from app.services.portfolio_engine import validate_trade_constraints
+        from app.services.order_logger import log_order_attempt
+        from app.data_sources.market_data import get_market_data
+
+        # 1. Fetch current price
+        try:
+            mdata = get_market_data(request.ticker)
+            market_price = mdata.get("price", 0.0)
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Could not retrieve current market price for {request.ticker}")
+
+        # 2. Check safety guidelines
+        violations = await validate_trade_constraints(request.ticker, request.quantity, market_price, "SELL")
+        if violations:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="REJECTED_SAFETY",
+                broker_response=f"Safety Violations: {', '.join(violations)}"
+            )
+            raise HTTPException(status_code=400, detail=f"Safety Check Rejected: {', '.join(violations)}")
+
+        # 3. Execute Order
+        try:
+            res = await place_market_sell(request.ticker, request.quantity, product=request.product)
+            order_id = res.get("order_id")
+            
+            # Log successful placement
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="SUCCESS",
+                order_id=order_id,
+                broker_response=f"Successfully filled. Order ID: {order_id}"
+            )
+            return TradingActionResponse(status="success", order_id=order_id, message=f"Sell order placed. Order ID: {order_id}", details=res)
+        except UpstoxAPIError as uae:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=market_price,
+                order_type="MARKET",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="FAILED",
+                broker_response=uae.message,
+                error_code=uae.error_code
+            )
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error placing market sell: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/limit-buy", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_limit_buy(request: LimitOrderPlacementRequest):
+    """Executes a Real Limit Buy order after safety limits verification."""
+    try:
+        from app.services.upstox_trading import place_limit_buy, UpstoxAPIError
+        from app.services.portfolio_engine import validate_trade_constraints
+        from app.services.order_logger import log_order_attempt
+
+        # 1. Check safety guidelines
+        violations = await validate_trade_constraints(request.ticker, request.quantity, request.price, "BUY")
+        if violations:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="REJECTED_SAFETY",
+                broker_response=f"Safety Violations: {', '.join(violations)}"
+            )
+            raise HTTPException(status_code=400, detail=f"Safety Check Rejected: {', '.join(violations)}")
+
+        # 2. Execute Order
+        try:
+            res = await place_limit_buy(request.ticker, request.quantity, request.price, product=request.product)
+            order_id = res.get("order_id")
+            
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="SUCCESS",
+                order_id=order_id,
+                broker_response=f"Limit order successfully placed. Order ID: {order_id}"
+            )
+            return TradingActionResponse(status="success", order_id=order_id, message=f"Limit Buy order placed. Order ID: {order_id}", details=res)
+        except UpstoxAPIError as uae:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="BUY",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="FAILED",
+                broker_response=uae.message,
+                error_code=uae.error_code
+            )
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error placing limit buy: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/limit-sell", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_limit_sell(request: LimitOrderPlacementRequest):
+    """Executes a Real Limit Sell order after safety limits verification."""
+    try:
+        from app.services.upstox_trading import place_limit_sell, UpstoxAPIError
+        from app.services.portfolio_engine import validate_trade_constraints
+        from app.services.order_logger import log_order_attempt
+
+        # 1. Check safety guidelines
+        violations = await validate_trade_constraints(request.ticker, request.quantity, request.price, "SELL")
+        if violations:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="REJECTED_SAFETY",
+                broker_response=f"Safety Violations: {', '.join(violations)}"
+            )
+            raise HTTPException(status_code=400, detail=f"Safety Check Rejected: {', '.join(violations)}")
+
+        # 2. Execute Order
+        try:
+            res = await place_limit_sell(request.ticker, request.quantity, request.price, product=request.product)
+            order_id = res.get("order_id")
+            
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="SUCCESS",
+                order_id=order_id,
+                broker_response=f"Limit order successfully placed. Order ID: {order_id}"
+            )
+            return TradingActionResponse(status="success", order_id=order_id, message=f"Limit Sell order placed. Order ID: {order_id}", details=res)
+        except UpstoxAPIError as uae:
+            log_order_attempt(
+                ticker=request.ticker,
+                side="SELL",
+                quantity=request.quantity,
+                price=request.price,
+                order_type="LIMIT",
+                ai_recommendation="N/A",
+                confidence=0,
+                execution_status="FAILED",
+                broker_response=uae.message,
+                error_code=uae.error_code
+            )
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error placing limit sell: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/cancel", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_cancel(request: OrderCancellationRequest):
+    """Cancels a pending order in Upstox."""
+    try:
+        from app.services.upstox_trading import cancel_order as upstox_cancel_order, UpstoxAPIError
+        try:
+            res = await upstox_cancel_order(request.order_id)
+            return TradingActionResponse(status="success", order_id=request.order_id, message=f"Order {request.order_id} cancelled.", details=res)
+        except UpstoxAPIError as uae:
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error cancelling order: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/modify", response_model=TradingActionResponse, tags=["Upstox Trading"])
+async def api_trading_modify(request: OrderModificationRequest):
+    """Modifies a pending order in Upstox."""
+    try:
+        from app.services.upstox_trading import modify_order as upstox_modify_order, UpstoxAPIError
+        try:
+            res = await upstox_modify_order(
+                order_id=request.order_id,
+                quantity=request.quantity,
+                price=request.price,
+                order_type=request.order_type or "LIMIT",
+                validity=request.validity or "DAY"
+            )
+            return TradingActionResponse(status="success", order_id=request.order_id, message=f"Order {request.order_id} modified.", details=res)
+        except UpstoxAPIError as uae:
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error modifying order: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/trading/orders", tags=["Upstox Trading"])
+async def api_trading_orders():
+    """Retrieves all current session orders (Order Book)."""
+    try:
+        from app.services.upstox_trading import get_orders as upstox_get_orders, UpstoxAPIError
+        try:
+            res = await upstox_get_orders()
+            return {"status": "success", "orders": res}
+        except UpstoxAPIError as uae:
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error fetching order book: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/trading/history", tags=["Upstox Trading"])
+async def api_trading_history(order_id: Optional[str] = None):
+    """Retrieves order session history log details."""
+    try:
+        from app.services.upstox_trading import get_order_history as upstox_get_order_history, UpstoxAPIError
+        try:
+            res = await upstox_get_order_history(order_id)
+            return {"status": "success", "history": res}
+        except UpstoxAPIError as uae:
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error fetching order history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/trading/positions", tags=["Upstox Trading"])
+async def api_trading_positions():
+    """Retrieves short-term holdings/positions from Upstox."""
+    try:
+        from app.services.upstox_trading import get_positions as upstox_get_positions, UpstoxAPIError
+        try:
+            res = await upstox_get_positions()
+            return {"status": "success", "positions": res}
+        except UpstoxAPIError as uae:
+            raise HTTPException(status_code=uae.status_code, detail=uae.message)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error fetching positions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+

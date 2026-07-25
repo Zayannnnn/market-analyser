@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Bookmark, Clock, Search, AlertCircle, Activity, Play, Cpu, PieChart, Layers, Shield, Server, Settings, Globe, Brain, BookOpen, Award } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bookmark, Clock, Search, AlertCircle, Activity, Play, Cpu, PieChart, Layers, Shield, Server, Settings, Globe, Brain, BookOpen, Award, Zap } from 'lucide-react';
 import Dashboard from './components/Dashboard.tsx';
 import StockDetail from './components/StockDetail.tsx';
 import IndexDetail from './components/IndexDetail.tsx';
@@ -17,6 +17,8 @@ import PersonalCIO from './components/PersonalCIO.tsx';
 import AILearning from './components/AILearning.tsx';
 import MarketIntelligence from './components/MarketIntelligence.tsx';
 import ResearchEngine from './components/ResearchEngine.tsx';
+import TradingPanel from './components/TradingPanel.tsx';
+
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -216,7 +218,7 @@ export default function App() {
   const [activeStocks, setActiveStocks] = useState<StockItem[]>([]);
   const [marketSummary, setMarketSummary] = useState<MarketSummary | null>(null);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
-  const [view, setView] = useState<'cio' | 'dashboard' | 'portfolio' | 'watchlist' | 'strategy_lab' | 'paper_trading' | 'monitor' | 'manager' | 'opportunity' | 'live' | 'health' | 'settings' | 'learning' | 'macro' | 'research'>('cio');
+  const [view, setView] = useState<'cio' | 'dashboard' | 'portfolio' | 'watchlist' | 'strategy_lab' | 'paper_trading' | 'monitor' | 'manager' | 'opportunity' | 'live' | 'health' | 'settings' | 'learning' | 'macro' | 'research' | 'trading'>('cio');
   const [halalOnly, setHalalOnly] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -654,6 +656,13 @@ export default function App() {
             <Shield size={13} /> Live Execution
           </button>
           <button 
+            className={`flat-btn nav-tab-btn ${view === 'trading' ? '' : 'flat-btn-outline'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
+            onClick={() => { setView('trading'); navigate('/'); }}
+          >
+            <Zap size={13} /> Trade Panel
+          </button>
+          <button 
             className={`flat-btn nav-tab-btn ${view === 'health' ? '' : 'flat-btn-outline'}`}
             style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '30px', padding: '0 0.75rem' }}
             onClick={() => { setView('health'); navigate('/'); }}
@@ -888,6 +897,11 @@ export default function App() {
                     <LiveExecution apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
                   </div>
                 )}
+                {view === 'trading' && (
+                  <div className="dashboard-container">
+                    <TradingPanel apiBase={API_BASE} onShowToast={triggerToast} />
+                  </div>
+                )}
                 {view === 'health' && (
                   <div className="dashboard-container">
                     <ProductionHealth apiBase={API_BASE} onShowToast={(msg, isErr) => showToast(msg, isErr || false)} />
@@ -1000,6 +1014,13 @@ export default function App() {
         >
           <Shield size={20} />
           <span>Live</span>
+        </button>
+        <button 
+          className={`bottom-nav-item ${view === 'trading' ? 'active' : ''}`}
+          onClick={() => { setView('trading'); navigate('/'); }}
+        >
+          <Zap size={20} />
+          <span>Trade</span>
         </button>
         <button 
           className={`bottom-nav-item ${view === 'health' ? 'active' : ''}`}

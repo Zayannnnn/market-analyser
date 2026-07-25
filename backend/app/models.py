@@ -67,3 +67,49 @@ class AlertModel(BaseModel):
     sentiment_score: float
     timestamp: str
     alert_sent: bool = True
+
+# --- New Trading & AI Review Schemas ---
+
+class TradeReviewRequest(BaseModel):
+    ticker: str
+    quantity: int
+    side: str  # "BUY" or "SELL"
+    price: Optional[float] = None
+    order_type: Optional[str] = "MARKET"
+
+class AITradeReviewResponse(BaseModel):
+    confidence: int
+    recommendation: str
+    risk: str
+    expected_reward: str
+    suggested_quantity: int
+    reasons: List[str]
+    warnings: List[str]
+
+class OrderPlacementRequest(BaseModel):
+    ticker: str
+    quantity: int
+    product: Optional[str] = "D"
+
+class LimitOrderPlacementRequest(BaseModel):
+    ticker: str
+    quantity: int
+    price: float
+    product: Optional[str] = "D"
+
+class OrderCancellationRequest(BaseModel):
+    order_id: str
+
+class OrderModificationRequest(BaseModel):
+    order_id: str
+    quantity: int
+    price: float
+    order_type: Optional[str] = "LIMIT"
+    validity: Optional[str] = "DAY"
+
+class TradingActionResponse(BaseModel):
+    status: str
+    order_id: Optional[str] = None
+    message: Optional[str] = None
+    error_code: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None

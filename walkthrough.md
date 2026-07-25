@@ -135,3 +135,38 @@ We initialized Firebase Admin using the private certificate `backend/serviceAcco
 ## 4. Codebase Audit: Yahoo/Synthetic References Removal
 *   **yfinance / Yahoo**: 0 functional references remain in the code.
 *   **Synthetic Fallbacks (EMA=0, ATR=0, etc.)**: 0 functional fallback placeholders exist in the codebase. All UI components display actual live indicators calculated from real historical candles.
+
+---
+
+## 5. Phase 4.1 - Upstox Order Execution & AI Trade Review
+
+This phase expands AORA into a production-grade AI-assisted trading platform capable of executing real-time Upstox orders under a strict confirmation workflow.
+
+### 5.1 New Backend Services Created
+*   **`backend/app/services/upstox_trading.py`**:
+    Wraps Upstox v2 Order Management REST endpoints (`place`, `modify`, `cancel`, `book`, `history`, `positions`). Built using async HTTPX client, retry loops on rate limits (429), and robust error handling.
+*   **`backend/app/services/ai_trade_review.py`**:
+    Aggregates real-time price feed, local indicator outputs (RSI, SMA, ATR support/resistance), news sentiment, cash availability, and risk exposure capguidelines. Feeds this metadata to Gemini 2.5 Flash to synthesize an AI Decision Briefing.
+*   **`backend/app/services/portfolio_engine.py`**:
+    Verifies trade constraints including market hours compliance, network checks, active auth checks, available margin checks, 20% single-stock exposure cap, and duplicate order prevention.
+*   **`backend/app/services/order_logger.py`**:
+    Records details of every order attempt (log id, ticker, side, quantity, price, AI recommendations, status, and broker responses) to Firestore for transaction audits.
+
+### 5.2 Backend API Routes Registered (main.py)
+*   `POST /api/trading/review`: Synthesizes pre-execution AI trade review.
+*   `POST /api/trading/buy` / `POST /api/trading/sell`: Executes market orders.
+*   `POST /api/trading/limit-buy` / `POST /api/trading/limit-sell`: Executes limit orders.
+*   `POST /api/trading/cancel` / `POST /api/trading/modify`: Order modification controls.
+*   `GET /api/trading/orders` / `GET /api/trading/history` / `GET /api/trading/positions`: Telemetry feeds.
+
+### 5.3 Frontend Component Integration
+*   **`frontend/src/components/TradingPanel.tsx`**:
+    Features segmented buy/sell controllers, cost requirement breakdowns, confidence gauges, risk meters, and justifications reason lists. Displays open orders and active positions.
+*   **`frontend/src/App.tsx`**:
+    Wired navbar navigation and bottom mobile navigation controls for the new `Trade Panel` view.
+
+### 5.4 Verification Results
+*   **Syntax & Build Validation**: Verified backend services compile cleanly under virtualenv Python.
+*   **Unit Test Suite (`backend/test_trading.py`)**:
+    Created 3 comprehensive unit tests using `TestClient` and mocks to verify routing behavior, safety constraints rejection, and AI review generation. All tests pass with exit code `OK`.
+

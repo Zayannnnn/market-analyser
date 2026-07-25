@@ -43,4 +43,14 @@
 - [x] Purge simulated candle generators and fallbacks from market_data.py completely
 - [x] Verify zero leftover Yahoo/placeholder references in backend and frontend
 - [x] Create automated deployment helper script deploy.ps1 for Cloud Run and Vercel
-- [x] Update walkthrough.md and task.md
+
+## Phase 4.1: Upstox Trading Service & AI Trade Review [IN PROGRESS]
+- [/] Create app/services/upstox_trading.py with place/cancel/modify/get order functions
+- [ ] Create app/services/order_logger.py to save attempts to Firestore
+- [ ] Create app/services/ai_trade_review.py for Gemini Flash review synthesis
+- [ ] Update app/models.py with pydantic schemas for requests, responses, and AI reviews
+- [ ] Implement FastApi routes in app/main.py
+- [ ] Build React frontend component frontend/src/components/TradingPanel.tsx
+- [ ] Register TradingPanel in frontend routes and UI navigation
+- [ ] Verify everything works E2E and run unit tests
+
