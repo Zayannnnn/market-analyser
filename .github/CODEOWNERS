@@ -1,0 +1,14 @@
+# CODEOWNERS for AORA Engine
+
+# Assign default owners for all repository files
+* @Zayannnnn
+
+# Assign backend source files
+/backend/ @Zayannnnn
+
+# Assign frontend source files
+/frontend/ @Zayannnnn
+
+# Assign documentation and configuration files
+/docs/ @Zayannnnn
+/.github/ @Zayannnnn
