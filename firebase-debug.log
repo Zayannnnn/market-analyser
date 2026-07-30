@@ -1,0 +1,77 @@
+[debug] [2026-07-15T22:18:11.366Z] ----------------------------------------------------------------------
+[debug] [2026-07-15T22:18:11.369Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\zayan\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --debug
+[debug] [2026-07-15T22:18:11.369Z] CLI Version:   15.23.0
+[debug] [2026-07-15T22:18:11.369Z] Platform:      win32
+[debug] [2026-07-15T22:18:11.369Z] Node Version:  v24.13.1
+[debug] [2026-07-15T22:18:11.369Z] Detected Agent: antigravity
+[debug] [2026-07-15T22:18:11.369Z] Time:          Thu Jul 16 2026 03:48:11 GMT+0530 (India Standard Time)
+[debug] [2026-07-15T22:18:11.369Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-15T22:18:11.396Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-07-15T22:18:19.158Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-15T22:18:19.446Z] Running auto auth
+[debug] [2026-07-15T22:18:19.447Z] [iam] checking project market-analyser-dc39c for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-07-15T22:18:19.449Z] No OAuth tokens found
+[debug] [2026-07-15T22:18:19.450Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions [none]
+[debug] [2026-07-15T22:18:19.450Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions  x-goog-user-project=market-analyser-dc39c
+[debug] [2026-07-15T22:18:19.451Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-15T22:18:19.861Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-07-15T22:18:19.862Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-07-15T22:18:20.968Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions 200
+[debug] [2026-07-15T22:18:20.968Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2026-07-15T22:18:20.969Z] [iam] error while checking permissions, command may fail: Authorization failed. This account is missing the following required permissions on project market-analyser-dc39c:
+
+  cloudfunctions.functions.create
+  cloudfunctions.functions.delete
+  cloudfunctions.functions.get
+  cloudfunctions.functions.list
+  cloudfunctions.functions.update
+  cloudfunctions.operations.get
+[debug] [2026-07-15T22:18:20.971Z] No OAuth tokens found
+[debug] [2026-07-15T22:18:20.972Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-07-15T22:18:20.972Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-07-15T22:18:22.761Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-07-15T22:18:22.761Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions {}
+[error] 
+[error] Error: Missing permissions required for functions deploy. You must have permission iam.serviceAccounts.ActAs on service account market-analyser-dc39c@appspot.gserviceaccount.com.
+
+To address this error, ask a project Owner to assign your account the "Service Account User" role from this URL:
+
+https://console.cloud.google.com/iam-admin/iam?project=market-analyser-dc39c
+[debug] [2026-07-15T22:20:27.985Z] ----------------------------------------------------------------------
+[debug] [2026-07-15T22:20:27.988Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\zayan\AppData\Local\npm-cache\_npx\7750544ccf494d8b\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --debug
+[debug] [2026-07-15T22:20:27.989Z] CLI Version:   15.23.0
+[debug] [2026-07-15T22:20:27.989Z] Platform:      win32
+[debug] [2026-07-15T22:20:27.989Z] Node Version:  v24.13.1
+[debug] [2026-07-15T22:20:27.990Z] Detected Agent: antigravity
+[debug] [2026-07-15T22:20:27.990Z] Time:          Thu Jul 16 2026 03:50:27 GMT+0530 (India Standard Time)
+[debug] [2026-07-15T22:20:27.990Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-15T22:20:32.839Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-15T22:20:40.257Z] Running auto auth
+[debug] [2026-07-15T22:20:40.259Z] [iam] checking project market-analyser-dc39c for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-07-15T22:20:40.263Z] No OAuth tokens found
+[debug] [2026-07-15T22:20:40.267Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions [none]
+[debug] [2026-07-15T22:20:40.267Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions  x-goog-user-project=market-analyser-dc39c
+[debug] [2026-07-15T22:20:40.267Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-15T22:20:41.841Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions 200
+[debug] [2026-07-15T22:20:41.842Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/market-analyser-dc39c:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2026-07-15T22:20:41.842Z] [iam] error while checking permissions, command may fail: Authorization failed. This account is missing the following required permissions on project market-analyser-dc39c:
+
+  cloudfunctions.functions.create
+  cloudfunctions.functions.delete
+  cloudfunctions.functions.get
+  cloudfunctions.functions.list
+  cloudfunctions.functions.update
+  cloudfunctions.operations.get
+[debug] [2026-07-15T22:20:41.845Z] No OAuth tokens found
+[debug] [2026-07-15T22:20:41.845Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-07-15T22:20:41.845Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-07-15T22:20:44.434Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-07-15T22:20:44.435Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/market-analyser-dc39c/serviceAccounts/market-analyser-dc39c@appspot.gserviceaccount.com:testIamPermissions {}
+[error] 
+[error] Error: Missing permissions required for functions deploy. You must have permission iam.serviceAccounts.ActAs on service account market-analyser-dc39c@appspot.gserviceaccount.com.
+
+To address this error, ask a project Owner to assign your account the "Service Account User" role from this URL:
+
+https://console.cloud.google.com/iam-admin/iam?project=market-analyser-dc39c

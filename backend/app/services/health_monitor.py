@@ -19,24 +19,43 @@ def measure_latency(service_name: str, start_time: float):
     logger.info(f"[OBSERVABILITY] Service: {service_name} | Latency: {duration_ms}ms")
     return duration_ms
 
-def trigger_auth_reminder(reason: str):
-    """Sends one Telegram authentication alert and updates Firestore status."""
+def get_runtime_state() -> Dict[str, Any]:
+    """Helper to fetch runtime state from Firestore config/runtime_state."""
+    default_state = {
+        "upstox_connected": False,
+        "expiry_notification_sent": False,
+        "last_notification": 0.0,
+        "last_auth_check": 0.0
+    }
     try:
-        status_ref = db.collection("config").document("upstox_status")
-        status_doc = status_ref.get()
-        now_ts = time.time()
+        doc = db.collection("config").document("runtime_state").get()
+        if doc.exists:
+            state = {**default_state, **doc.to_dict()}
+            # Ensure boolean types
+            state["upstox_connected"] = bool(state.get("upstox_connected", False))
+            state["expiry_notification_sent"] = bool(state.get("expiry_notification_sent", False))
+            state["last_notification"] = float(state.get("last_notification", 0.0))
+            state["last_auth_check"] = float(state.get("last_auth_check", 0.0))
+            return state
+    except Exception as e:
+        logger.warning(f"Error fetching runtime state: {e}")
+    return default_state
+
+def set_runtime_state(state: Dict[str, Any]):
+    """Helper to set runtime state in Firestore config/runtime_state."""
+    try:
+        db.collection("config").document("runtime_state").set(state)
+    except Exception as e:
+        logger.warning(f"Error setting runtime state: {e}")
+
+def trigger_auth_reminder(reason: str):
+    """Sends one Telegram authentication alert."""
+    try:
+        bot_token = settings.telegram_bot_token
+        chat_id = settings.telegram_chat_id
+        login_url = settings.public_login_url
         
-        last_alert = 0.0
-        if status_doc.exists:
-            last_alert = float(status_doc.to_dict().get("last_expiry_alert", 0.0))
-            
-        # Send alert if no alert was sent in the last 12 hours (prevents duplicates)
-        if now_ts - last_alert > 43200:
-            bot_token = settings.telegram_bot_token
-            chat_id = settings.telegram_chat_id
-            login_url = settings.public_login_url
-            
-            text = f"""
+        text = f"""
 🔐 <b>AORA Authentication Required</b>
 
 Your Upstox session has expired.
@@ -52,26 +71,22 @@ Scheduler: <b>ACTIVE</b>
 Reconnect using:
 <a href="{login_url}">{login_url}</a>
 """
-            if bot_token and chat_id:
-                url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                httpx.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=5.0)
-                
-            status_ref.set({
-                "authentication_status": "EXPIRED",
-                "last_expiry_alert": now_ts,
-                "last_alert_reason": reason
-            }, merge=True)
-            logger.info("Sent Telegram authentication required reminder.")
+        if bot_token and chat_id:
+            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            httpx.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=5.0)
+            
+        logger.info("Sent Telegram authentication required reminder.")
     except Exception as e:
         logger.error(f"Error triggering auth reminder: {e}")
 
 def validate_upstox_token() -> Dict[str, Any]:
-    """Validates the currently loaded Upstox OAuth token (Task 6)."""
+    """Validates the currently loaded Upstox OAuth token and handles config/runtime_state updates."""
     start_time = time.time()
     token = upstox_client.get_access_token()
     now_ts = time.time()
     
     status_ref = db.collection("config").document("upstox_status")
+    state = get_runtime_state()
     
     if not token:
         latency = measure_latency("Upstox Token Validation", start_time)
@@ -83,7 +98,18 @@ def validate_upstox_token() -> Dict[str, Any]:
             "updated_at": datetime.utcnow().isoformat() + "Z"
         }, merge=True)
         
-        trigger_auth_reminder(reason)
+        last_notif = float(state.get("last_notification", 0.0))
+        notif_sent = bool(state.get("expiry_notification_sent", False))
+        
+        # Send only ONE notification per expiry event, and enforce 24h cooldown
+        if not notif_sent and (now_ts - last_notif >= 86400.0):
+            trigger_auth_reminder(reason)
+            state["last_notification"] = now_ts
+            state["expiry_notification_sent"] = True
+            
+        state["upstox_connected"] = False
+        state["last_auth_check"] = now_ts
+        set_runtime_state(state)
         
         status_ref.set({
             "authentication_status": "EXPIRED",
@@ -102,6 +128,12 @@ def validate_upstox_token() -> Dict[str, Any]:
         latency = measure_latency("Upstox Token Validation", start_time)
         
         if res.status_code == 200:
+            # Reconnect successful or already connected
+            state["upstox_connected"] = True
+            state["expiry_notification_sent"] = False
+            state["last_auth_check"] = now_ts
+            set_runtime_state(state)
+            
             status_ref.set({
                 "authentication_status": "CONNECTED",
                 "last_health_check": now_ts,
@@ -118,7 +150,17 @@ def validate_upstox_token() -> Dict[str, Any]:
                 "updated_at": datetime.utcnow().isoformat() + "Z"
             }, merge=True)
             
-            trigger_auth_reminder(reason)
+            last_notif = float(state.get("last_notification", 0.0))
+            notif_sent = bool(state.get("expiry_notification_sent", False))
+            
+            if not notif_sent and (now_ts - last_notif >= 86400.0):
+                trigger_auth_reminder(reason)
+                state["last_notification"] = now_ts
+                state["expiry_notification_sent"] = True
+                
+            state["upstox_connected"] = False
+            state["last_auth_check"] = now_ts
+            set_runtime_state(state)
             
             status_ref.set({
                 "authentication_status": "EXPIRED",
@@ -136,7 +178,17 @@ def validate_upstox_token() -> Dict[str, Any]:
                 "updated_at": datetime.utcnow().isoformat() + "Z"
             }, merge=True)
             
-            trigger_auth_reminder(reason)
+            last_notif = float(state.get("last_notification", 0.0))
+            notif_sent = bool(state.get("expiry_notification_sent", False))
+            
+            if not notif_sent and (now_ts - last_notif >= 86400.0):
+                trigger_auth_reminder(reason)
+                state["last_notification"] = now_ts
+                state["expiry_notification_sent"] = True
+                
+            state["upstox_connected"] = False
+            state["last_auth_check"] = now_ts
+            set_runtime_state(state)
             
             status_ref.set({
                 "authentication_status": "ERROR",
@@ -156,7 +208,17 @@ def validate_upstox_token() -> Dict[str, Any]:
             "updated_at": datetime.utcnow().isoformat() + "Z"
         }, merge=True)
         
-        trigger_auth_reminder(reason)
+        last_notif = float(state.get("last_notification", 0.0))
+        notif_sent = bool(state.get("expiry_notification_sent", False))
+        
+        if not notif_sent and (now_ts - last_notif >= 86400.0):
+            trigger_auth_reminder(reason)
+            state["last_notification"] = now_ts
+            state["expiry_notification_sent"] = True
+            
+        state["upstox_connected"] = False
+        state["last_auth_check"] = now_ts
+        set_runtime_state(state)
         
         status_ref.set({
             "authentication_status": "ERROR",

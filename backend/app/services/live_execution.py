@@ -120,32 +120,15 @@ def check_execution_safety(
     except Exception as e:
         logger.warning(f"Error checking duplicate orders: {e}")
         
-    # 5. Sizing & Capital limits checks
-    cash = float(portfolio.get("cash_available", 0.0))
-    order_val = qty * price
-    
-    if transaction_type == "BUY" and order_val > cash:
-        violations.append(f"Insufficient cash. Order Value: ₹{order_val:,.2f} | Available Cash: ₹{cash:,.2f}")
+    # 5. Risk limits checks from Risk Engine (configurable Rules)
+    try:
+        from app.services.risk_engine import validate_portfolio_risk_rules
+        risk_violations = validate_portfolio_risk_rules(ticker, qty, price, transaction_type, portfolio)
+        violations.extend(risk_violations)
+    except Exception as e:
+        logger.error(f"Error calling validate_portfolio_risk_rules: {e}")
+        violations.append(f"Risk Engine safety validation error: {e}")
         
-    # Position Sizing Exposure caps (20% single asset cap)
-    holdings = portfolio.get("holdings", [])
-    holdings_val = 0.0
-    ticker_val = 0.0
-    for h in holdings:
-        h_ticker = h.get("ticker", h.get("tradingsymbol", "Unknown"))
-        h_qty = float(h.get("quantity", h.get("qty", 0.0)))
-        h_price = float(h.get("last_price", h.get("current_price", 0.0)))
-        h_val = h_qty * h_price
-        holdings_val += h_val
-        if h_ticker == ticker:
-            ticker_val = h_val
-            
-    portfolio_value = cash + holdings_val
-    if portfolio_value > 0:
-        new_ticker_pct = ((ticker_val + order_val) / portfolio_value) * 100.0
-        if transaction_type == "BUY" and new_ticker_pct > 20.0:
-            violations.append(f"Position size violation. Buying {ticker} will exceed single-stock limit (20% cap). Proposed: {new_ticker_pct:.1f}%")
-            
     return violations
 
 def send_telegram_order_alert(order_data: Dict[str, Any]):
@@ -377,3 +360,165 @@ def reject_live_order(order_id: str) -> bool:
     doc_ref.set(order_data)
     send_telegram_order_alert(order_data)
     return True
+
+def run_live_auto_trading():
+    """
+    Continuous live execution scanner.
+    Checks top scored opportunities from Shariah watchlist. If they hit buy criteria (>75 score)
+    and aren't already held, prepares the order, validates safety bounds, and routes or requests approval.
+    """
+    mode = get_live_execution_mode()
+    if mode == "OFF":
+        logger.info("Live auto trading skipped: Mode is OFF.")
+        return
+        
+    logger.info(f"Running background Live Auto Trading scanner (Mode: {mode})")
+    
+    # 1. Fetch live portfolio
+    portfolio = get_live_portfolio_data()
+    if not portfolio.get("authenticated", False):
+        logger.warning("Auto trading scanner: portfolio is not authenticated.")
+        return
+        
+    cash = float(portfolio.get("cash_available", 0.0))
+    
+    # 2. Scan Shariah Watchlist from Firestore
+    try:
+        from app.services.risk_engine import get_risk_rules
+        watchlist_docs = db.collection("halal_watchlist").get()
+        for doc in watchlist_docs:
+            w_data = doc.to_dict()
+            ticker = w_data["ticker"].upper()
+            
+            # Check if already held
+            is_held = any(h.get("ticker", h.get("tradingsymbol", "")).upper() == ticker for h in portfolio.get("holdings", []))
+            if is_held:
+                continue
+                
+            # Fetch AI score
+            ai_doc = db.collection("ai_analysis").document(ticker).get()
+            if not ai_doc.exists:
+                continue
+                
+            ai_data = ai_doc.to_dict()
+            score = ai_data.get("unified_score", 0)
+            rec = ai_data.get("recommendation", "HOLD")
+            
+            # Criteria: BUY recommendation and score > 75
+            if rec == "BUY" and score > 75:
+                logger.info(f"Found opportunity for {ticker} (Score: {score}). Validating safety...")
+                
+                # Fetch price
+                from app.data_sources.market_data import get_market_data
+                try:
+                    price = float(ai_data.get("entry_price", get_market_data(ticker).get("price", 0.0)))
+                except:
+                    continue
+                atr = float(ai_data.get("atr", price * 0.03))
+                
+                # 1.5% max risk capital sizing
+                total_portfolio_value = cash + sum(float(h.get("quantity", 0)) * float(h.get("last_price", 0.0)) for h in portfolio.get("holdings", []))
+                risk_capital = total_portfolio_value * 0.015
+                sl_dist = 2 * atr
+                suggested_qty = int(risk_capital / sl_dist) if sl_dist > 0 else int(risk_capital / (price * 0.05))
+                
+                # Cap single stock exposure to dynamic rule (default 20%)
+                rules = get_risk_rules()
+                max_stock_pct = float(rules.get("max_single_stock_exposure_pct", 20.0)) / 100.0
+                max_alloc = total_portfolio_value * max_stock_pct
+                qty = min(suggested_qty, int(max_alloc / price))
+                
+                if qty <= 0:
+                    continue
+                    
+                # Place the order through safety layer
+                logger.info(f"Submitting live auto order for {ticker}: {qty} shares @ ₹{price}")
+                place_live_order(
+                    ticker=ticker,
+                    qty=qty,
+                    price=price,
+                    order_type="LIMIT",
+                    transaction_type="BUY",
+                    reason=f"Auto-generated from Watchlist scanner with AI Score {score}/100",
+                    confidence=score,
+                    risk_score=ai_data.get("risk_score", 50),
+                    regime=ai_data.get("market_regime", "Neutral")
+                )
+    except Exception as e:
+        logger.error(f"Error in run_live_auto_trading loop: {e}", exc_info=True)
+
+def monitor_live_positions():
+    """
+    Checks active holdings positions against dynamic Stop-Loss and Profit targets.
+    If a trigger is hit:
+    - If mode is AUTO, submits a market sell order immediately to protect capital.
+    - If mode is CONFIRM or OFF, dispatches a Telegram alert.
+    """
+    mode = get_live_execution_mode()
+    logger.info(f"Running background Live Position Monitor (Mode: {mode})")
+    
+    portfolio = get_live_portfolio_data()
+    if not portfolio.get("authenticated", False):
+        return
+        
+    holdings = portfolio.get("holdings", [])
+    
+    try:
+        from app.services.risk_engine import get_risk_rules
+        rules = get_risk_rules()
+        
+        # Load stop loss / take profit rules (percentages)
+        sl_pct = float(rules.get("stop_loss_pct", 10.0)) / 100.0
+        tp_pct = float(rules.get("target_profit_pct", 25.0)) / 100.0
+        
+        for h in holdings:
+            ticker = h.get("ticker", h.get("tradingsymbol", "Unknown")).upper()
+            qty = int(float(h.get("quantity", h.get("qty", 0.0))))
+            avg_cost = float(h.get("average_price", 0.0))
+            current_price = float(h.get("last_price", h.get("current_price", 0.0)))
+            
+            if qty <= 0 or avg_cost <= 0:
+                continue
+                
+            pnl_pct = (current_price - avg_cost) / avg_cost
+            
+            trigger_hit = False
+            reason = ""
+            
+            if pnl_pct <= -sl_pct:
+                trigger_hit = True
+                reason = f"STOP_LOSS_TRIGGERED (PnL: {pnl_pct*100:.2f}% <= -{sl_pct*100:.1f}%)"
+            elif pnl_pct >= tp_pct:
+                trigger_hit = True
+                reason = f"TAKE_PROFIT_TRIGGERED (PnL: {pnl_pct*100:.2f}% >= {tp_pct*100:.1f}%)"
+                
+            if trigger_hit:
+                logger.warning(f"Position Alert for {ticker}: {reason}")
+                if mode == "AUTO":
+                    logger.info(f"Auto mode active. Exiting position {ticker} immediately.")
+                    place_live_order(
+                        ticker=ticker,
+                        qty=qty,
+                        price=current_price,
+                        order_type="MARKET",
+                        transaction_type="SELL",
+                        reason=f"Automated Exit: {reason}",
+                        confidence=95,
+                        risk_score=80,
+                        regime="EOD"
+                    )
+                else:
+                    # Send warning Telegram alert
+                    bot_token = settings.telegram_bot_token
+                    chat_id = settings.telegram_chat_id
+                    if bot_token and chat_id:
+                        text = f"🚨 <b>PORTFOLIO EXPOSURE ALERT</b>\n\nAsset <b>{ticker}</b> reached trigger bounds!\nAction: <b>SELL recommended</b>\nReason: <i>{reason}</i>\nCurrent Price: ₹{current_price:,.2f} (Entry: ₹{avg_cost:,.2f})\n\nMode is set to {mode}. Click Trade Panel to execute."
+                        try:
+                            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                            payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+                            httpx.post(url, json=payload, timeout=5.0)
+                        except Exception as err:
+                            logger.warning(f"Failed to dispatch monitoring alert: {err}")
+    except Exception as e:
+        logger.error(f"Error in monitor_live_positions loop: {e}", exc_info=True)
+
