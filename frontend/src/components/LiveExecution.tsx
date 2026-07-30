@@ -45,6 +45,16 @@ export default function LiveExecution({ apiBase, onShowToast }: LiveExecutionPro
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUpdatingConfig, setIsUpdatingConfig] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [riskRules, setRiskRules] = useState<any>({
+    max_portfolio_exposure_pct: 80.0,
+    max_sector_exposure_pct: 40.0,
+    max_single_stock_exposure_pct: 20.0,
+    max_daily_loss_pct: 5.0,
+    max_order_size_val: 50000.0,
+    stop_loss_pct: 10.0,
+    target_profit_pct: 25.0
+  });
+  const [isSavingRules, setIsSavingRules] = useState<boolean>(false);
   
   // Custom manual order states
   const [customTicker, setCustomTicker] = useState<string>('');
@@ -53,6 +63,29 @@ export default function LiveExecution({ apiBase, onShowToast }: LiveExecutionPro
   const [customAction, setCustomAction] = useState<string>('BUY');
   const [customReason, setCustomReason] = useState<string>('Manual safety test');
   const [isSubmittingCustom, setIsSubmittingCustom] = useState<boolean>(false);
+
+  const handleSaveRiskRules = async () => {
+    try {
+      setIsSavingRules(true);
+      const res = await fetch(`${apiBase}/api/trading/risk-rules`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(riskRules)
+      });
+      if (res.ok) {
+        onShowToast("Risk limits updated successfully in Firestore.");
+      } else {
+        onShowToast("Failed to save risk limits.", true);
+      }
+    } catch (err) {
+      console.error(err);
+      onShowToast("Network error updating risk limits.", true);
+    } finally {
+      setIsSavingRules(false);
+    }
+  };
 
   const fetchStatus = async () => {
     try {
@@ -73,6 +106,13 @@ export default function LiveExecution({ apiBase, onShowToast }: LiveExecutionPro
       const resScheduler = await fetch(`${apiBase}/api/paper/scheduler/status`);
       const schedulerData = await resScheduler.json();
       setIsAuthenticated(schedulerData.upstox_status === 'CONNECTED');
+      
+      // 4. Fetch Risk Rules
+      const resRules = await fetch(`${apiBase}/api/trading/risk-rules`);
+      if (resRules.ok) {
+        const rulesData = await resRules.json();
+        setRiskRules(rulesData);
+      }
       
     } catch (e) {
       console.error(e);
@@ -163,8 +203,6 @@ export default function LiveExecution({ apiBase, onShowToast }: LiveExecutionPro
   };
 
   const pending = orders.filter(o => o.status === 'PENDING_APPROVAL');
-  const filled = orders.filter(o => ['FILLED', 'FILLED_SIMULATED'].includes(o.status));
-  const rejected = orders.filter(o => ['REJECTED_SAFETY', 'REJECTED_BROKER', 'REJECTED_MANUAL'].includes(o.status));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', paddingBottom: '3.5rem' }}>
@@ -472,6 +510,112 @@ export default function LiveExecution({ apiBase, onShowToast }: LiveExecutionPro
                 <span>Duplicate Order Cover:</span>
                 <strong>Required (5 Min Span)</strong>
               </div>
+            </div>
+          </div>
+
+          {/* Risk Rules Editor */}
+          <div className="card-panel">
+            <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1rem' }}>
+              <Settings size={16} className="text-info" /> Risk Engine Configurations
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.76rem' }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  Max Portfolio Exposure ({riskRules.max_portfolio_exposure_pct}%)
+                </label>
+                <input 
+                  type="range" 
+                  min="10" max="100" step="5"
+                  value={riskRules.max_portfolio_exposure_pct}
+                  onChange={e => setRiskRules({...riskRules, max_portfolio_exposure_pct: Number(e.target.value)})}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  Max Sector Exposure ({riskRules.max_sector_exposure_pct}%)
+                </label>
+                <input 
+                  type="range" 
+                  min="10" max="80" step="5"
+                  value={riskRules.max_sector_exposure_pct}
+                  onChange={e => setRiskRules({...riskRules, max_sector_exposure_pct: Number(e.target.value)})}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  Max Single Stock Exposure ({riskRules.max_single_stock_exposure_pct}%)
+                </label>
+                <input 
+                  type="range" 
+                  min="5" max="50" step="5"
+                  value={riskRules.max_single_stock_exposure_pct}
+                  onChange={e => setRiskRules({...riskRules, max_single_stock_exposure_pct: Number(e.target.value)})}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  Max Daily Loss Limit ({riskRules.max_daily_loss_pct}%)
+                </label>
+                <input 
+                  type="range" 
+                  min="1" max="15" step="1"
+                  value={riskRules.max_daily_loss_pct}
+                  onChange={e => setRiskRules({...riskRules, max_daily_loss_pct: Number(e.target.value)})}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  Max Capital Per Order (₹)
+                </label>
+                <input 
+                  type="number" 
+                  value={riskRules.max_order_size_val}
+                  onChange={e => setRiskRules({...riskRules, max_order_size_val: Number(e.target.value)})}
+                  className="search-input"
+                  style={{ width: '100%', height: '32px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Stop Loss %</label>
+                  <input 
+                    type="number" 
+                    value={riskRules.stop_loss_pct}
+                    onChange={e => setRiskRules({...riskRules, stop_loss_pct: Number(e.target.value)})}
+                    className="search-input"
+                    style={{ width: '100%', height: '32px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Target Profit %</label>
+                  <input 
+                    type="number" 
+                    value={riskRules.target_profit_pct}
+                    onChange={e => setRiskRules({...riskRules, target_profit_pct: Number(e.target.value)})}
+                    className="search-input"
+                    style={{ width: '100%', height: '32px' }}
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleSaveRiskRules}
+                disabled={isSavingRules}
+                className="flat-btn flat-btn-outline" 
+                style={{ width: '100%', height: '36px', marginTop: '0.5rem', background: 'var(--info)', color: 'white', border: 'none' }}
+              >
+                {isSavingRules ? 'Saving Rules...' : 'Save Rules to Firestore'}
+              </button>
             </div>
           </div>
 

@@ -17,6 +17,24 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [holdingsAnalysis, setHoldingsAnalysis] = useState<any[]>([]);
+  const [loadingAnalysis, setLoadingAnalysis] = useState<boolean>(false);
+
+  const fetchHoldingsAnalysis = () => {
+    setLoadingAnalysis(true);
+    fetch(`${apiBase}/api/portfolio/holdings-analysis`)
+      .then(res => res.json())
+      .then(resData => {
+        if (resData.status === 'success') {
+          setHoldingsAnalysis(resData.holdings || []);
+        }
+        setLoadingAnalysis(false);
+      })
+      .catch(err => {
+        console.error("Error fetching holdings analysis:", err);
+        setLoadingAnalysis(false);
+      });
+  };
 
   const fetchPortfolioData = () => {
     setLoading(true);
@@ -59,6 +77,7 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
 
   useEffect(() => {
     fetchPortfolioData();
+    fetchHoldingsAnalysis();
   }, [refreshKey]);
 
   if (loading) {
@@ -102,6 +121,9 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
 
   // Calculate live portfolio summary metrics
   const cash = portfolioData.cash_available;
+  const buyingPower = portfolioData.buying_power || 0.0;
+  const marginUsed = portfolioData.margin_used || 0.0;
+  const totalCash = portfolioData.total_cash || 0.0;
   let holdingsValue = 0.0;
   let todayPnl = 0.0;
   let overallPnl = portfolioData.unrealized_pnl || 0.0;
@@ -111,8 +133,6 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
     const qty = floatVal(h.quantity || h.qty);
     const lastPrice = floatVal(h.last_price || h.ltp);
     const closePrice = floatVal(h.close_price || lastPrice);
-    const avgCost = floatVal(h.average_price);
-    
     holdingsValue += qty * lastPrice;
     todayPnl += (lastPrice - closePrice) * qty;
   });
@@ -164,7 +184,7 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
       </div>
 
       {/* Dynamic Broker Portfolio Summary Dials */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
         
         <div className="card-panel" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
           <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>Portfolio Value</span>
@@ -174,9 +194,23 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
         </div>
 
         <div className="card-panel" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
-          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>Available Margin</span>
+          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>Buying Power</span>
           <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--info)' }}>
-            ₹{cash.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{buyingPower.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+
+        <div className="card-panel" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
+          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>Margin Used</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--warning)' }}>
+            ₹{marginUsed.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+
+        <div className="card-panel" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
+          <span style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', letterSpacing: '0.05em' }}>Total Cash</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
+            ₹{totalCash.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -204,6 +238,21 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
         </div>
 
       </div>
+
+      {/* Concentration Risk Alert Banner */}
+      {(health.diversification_engine?.overweight_sectors?.length > 0 || health.diversification_engine?.single_stock_concentration?.length > 0) && (
+        <div className="card-panel" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid var(--danger)', padding: '1rem', background: 'rgba(239, 68, 68, 0.02)', borderColor: 'rgba(239, 68, 68, 0.15)' }}>
+          <ShieldAlert className="text-bearish" size={24} style={{ filter: 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.3))' }} />
+          <div>
+            <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>Portfolio Concentration Alert</h4>
+            <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              {health.diversification_engine.overweight_sectors.length > 0 && `Overweight Sectors: ${health.diversification_engine.overweight_sectors.join(', ')} (>35% limit). `}
+              {health.diversification_engine.single_stock_concentration.length > 0 && `High Stock Concentration: ${health.diversification_engine.single_stock_concentration.join(', ')} (>25% limit). `}
+              Consider rebalancing allocations to reduce correlation risk.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Grid containing gauges & allocations */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -347,6 +396,111 @@ export default function PortfolioIntelligence({ portfolio: parentPortfolio, acti
             <h3>No Active Broker Holdings</h3>
             <p style={{ fontSize: '0.82rem', marginTop: '0.4rem', color: 'var(--text-secondary)' }}>
               No open long-term holdings detected in your Upstox broker account. Place order bids on ranked Shariah-compliant equities to start building your portfolio.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Holdings AI Advisory & Ratings */}
+      <div className="card-panel" style={{ padding: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Award size={16} className="text-info" /> Holdings AI Recommendations & Safety Ratings
+          </h3>
+          <button 
+            onClick={fetchHoldingsAnalysis}
+            disabled={loadingAnalysis}
+            className="flat-btn flat-btn-outline" 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '26px', padding: '0 0.5rem', fontSize: '0.7rem' }}
+          >
+            {loadingAnalysis ? 'Running Engine...' : 'Re-Run AI Review'}
+          </button>
+        </div>
+
+        {loadingAnalysis ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '0.5rem' }}>
+            <div style={{ width: '24px', height: '24px', border: '2px solid rgba(255,255,255,0.05)', borderTopColor: 'var(--info)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Gemini is analyzing technicals, sentiment, and sizing for each holding...</span>
+          </div>
+        ) : holdingsAnalysis.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {holdingsAnalysis.map((item: any, idx: number) => {
+              const recommendation = item.analysis?.decision || 'HOLD';
+              const confidence = item.analysis?.confidence || 60;
+              const risk = item.analysis?.risk_score || 50;
+              const reward = item.analysis?.expected_reward || 'N/A';
+              const reasoning = item.analysis?.reasoning || [];
+              const suggestedQty = item.analysis?.suggested_quantity || 0;
+
+              let recColor = 'var(--text-secondary)';
+              if (recommendation === 'BUY') recColor = 'var(--success)';
+              else if (recommendation === 'ACCUMULATE') recColor = 'var(--info)';
+              else if (recommendation === 'REDUCE') recColor = 'var(--warning)';
+              else if (recommendation === 'SELL') recColor = 'var(--danger)';
+
+              return (
+                <div key={idx} className="card-panel" style={{ background: 'rgba(255,255,255,0.005)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>{item.ticker}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.sector}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Alloc: {item.allocation_pct}% ({item.shares_held} shrs)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '4px',
+                        background: `${recColor}15`,
+                        color: recColor,
+                        border: `1px solid ${recColor}30`,
+                        letterSpacing: '0.05em'
+                      }}>
+                        {recommendation}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.8rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>AI Confidence:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{confidence}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Position Risk Rating:</span>
+                        <span style={{ fontWeight: 700, color: risk > 60 ? 'var(--danger)' : risk > 40 ? 'var(--warning)' : 'var(--success)' }}>{risk}/100</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Expected Target:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{reward}</span>
+                      </div>
+                      {suggestedQty > 0 && suggestedQty !== item.shares_held && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '0.4rem' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Suggested Qty:</span>
+                          <span style={{ fontWeight: 700, color: recColor }}>{suggestedQty} shares</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'block', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>REASONING MATRIX</span>
+                      <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: '1.4' }}>
+                        {reasoning.map((r: string, rIdx: number) => (
+                          <li key={rIdx} style={{ marginBottom: '0.2rem' }}>{r}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state" style={{ padding: '1.5rem 1rem' }}>
+            <Award size={28} className="empty-state-icon" style={{ opacity: 0.3 }} />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+              AI analysis not yet loaded. Re-run review to fetch holdings ratings.
             </p>
           </div>
         )}

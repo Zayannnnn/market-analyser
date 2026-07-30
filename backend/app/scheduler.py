@@ -83,6 +83,30 @@ def run_agent_pipeline_job():
         logger.error(f"Error executing scheduled agent pipeline: {e}")
         return []
 
+def run_live_and_paper_automation():
+    """Wrapper to run both paper trading automation and real live auto trading/monitoring."""
+    logger.info("Executing Live and Paper Automation background scheduler cycle...")
+    # 1. Run paper trading automation (simulation)
+    try:
+        from app.services.paper_scheduler import run_paper_trade_automation
+        run_paper_trade_automation()
+    except Exception as e:
+        logger.error(f"Error running scheduled paper trade automation: {e}")
+        
+    # 2. Run real live auto trading execution
+    try:
+        from app.services.live_execution import run_live_auto_trading
+        run_live_auto_trading()
+    except Exception as e:
+        logger.error(f"Error running scheduled live auto trading: {e}")
+        
+    # 3. Run real live positions stop-loss / take-profit monitoring
+    try:
+        from app.services.live_execution import monitor_live_positions
+        monitor_live_positions()
+    except Exception as e:
+        logger.error(f"Error running scheduled live positions monitoring: {e}")
+
 def init_scheduler():
     """Initializes and runs APscheduler interval loops and cron events."""
     scheduler = BackgroundScheduler()
@@ -145,9 +169,8 @@ def init_scheduler():
     # 5. Live Market Scan & Target/SL Tracker (Every 30 mins during market hours Mon-Fri)
     # Mon-Fri between 09:15 and 15:30 IST (03:45 to 10:00 UTC)
     try:
-        from app.services.paper_scheduler import run_paper_trade_automation
         scheduler.add_job(
-            run_paper_trade_automation,
+            run_live_and_paper_automation,
             'cron',
             day_of_week='mon-fri',
             hour='3-10',
@@ -155,7 +178,7 @@ def init_scheduler():
             id='live_market_tracker_job',
             replace_existing=True
         )
-        logger.info("Scheduled Live Market Tracker every 30 minutes during market hours.")
+        logger.info("Scheduled Live Market Tracker (Live & Paper) every 30 minutes during market hours.")
     except Exception as e:
         logger.error(f"Failed to schedule market tracker job: {e}")
         

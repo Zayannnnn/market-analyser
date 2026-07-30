@@ -38,6 +38,9 @@ def get_live_portfolio_data() -> Dict[str, Any]:
     portfolio = {
         "holdings": [],
         "cash_available": 0.0,
+        "buying_power": 0.0,
+        "margin_used": 0.0,
+        "total_cash": 0.0,
         "realized_pnl": 0.0,
         "unrealized_pnl": 0.0,
         "authenticated": False,
@@ -85,7 +88,14 @@ def get_live_portfolio_data() -> Dict[str, Any]:
             return portfolio
         elif res.status_code == 200:
             equity = res.json().get("data", {}).get("equity", {})
-            portfolio["cash_available"] = float(equity.get("available_margin", equity.get("cash", 0.0)))
+            available_margin = float(equity.get("available_margin", 0.0))
+            used_margin = float(equity.get("used_margin", 0.0))
+            cash_val = float(equity.get("cash", 0.0))
+            
+            portfolio["cash_available"] = available_margin if available_margin > 0 else cash_val
+            portfolio["buying_power"] = available_margin
+            portfolio["margin_used"] = used_margin
+            portfolio["total_cash"] = cash_val
             portfolio["realized_pnl"] = float(equity.get("realized_profit", 0.0))
         else:
             portfolio["error"] = f"Upstox funds error: {res.text}"

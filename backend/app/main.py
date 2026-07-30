@@ -1108,6 +1108,40 @@ def api_get_portfolio_rotation():
         logger.error(f"Error in portfolio rotation endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/portfolio/holdings-analysis", tags=["AI Portfolio Manager"])
+async def api_get_portfolio_holdings_analysis():
+    """Analyzes every position in the live portfolio returning BUY/HOLD/SELL/REDUCE/ACCUMULATE."""
+    try:
+        from app.services.portfolio_analysis_engine import generate_holdings_analysis
+        res = await generate_holdings_analysis()
+        return res
+    except Exception as e:
+        logger.error(f"Error in holdings analysis endpoint: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/trading/risk-rules", tags=["Risk Engine"])
+def api_get_risk_rules():
+    """Retrieves current risk limits configuration."""
+    try:
+        from app.services.risk_engine import get_risk_rules
+        return get_risk_rules()
+    except Exception as e:
+        logger.error(f"Error in GET risk-rules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/risk-rules", tags=["Risk Engine"])
+def api_update_risk_rules(rules: Dict[str, Any]):
+    """Updates active risk limits configuration in Firestore."""
+    try:
+        from app.db import db
+        # Strip internal id if passed
+        filtered_rules = {k: float(v) for k, v in rules.items() if k != "id"}
+        db.collection("config").document("risk_rules").set(filtered_rules)
+        return {"status": "success", "message": "Risk rules updated successfully.", "rules": filtered_rules}
+    except Exception as e:
+        logger.error(f"Error updating risk rules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Live Execution Engine Endpoints (Phase 7.0)
 @app.get("/api/live/orders", tags=["Live Execution"])
 def api_get_live_orders():
@@ -1567,6 +1601,18 @@ def api_upstox_callback(code: str):
             "last_health_check_status": "CONNECTED",
             "last_expiry_alert": 0.0, # reset reminder tracker
             "last_processed_code": code # track to prevent reuse
+        }, merge=True)
+        
+        # Reset config/runtime_state and resume live trading
+        db.collection("config").document("runtime_state").set({
+            "upstox_connected": True,
+            "expiry_notification_sent": False,
+            "last_auth_check": now_ts
+        }, merge=True)
+        
+        db.collection("live_trading").document("config").set({
+            "live_trading_enabled": True,
+            "updated_at": datetime.utcnow().isoformat() + "Z"
         }, merge=True)
         
         # Dispatch connection success to Telegram (Task 4)
