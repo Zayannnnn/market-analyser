@@ -17,56 +17,41 @@
 
 ---
 
-## 1. System Overview
-
-**AORA (Apex Stock Intelligence Engine)** is an automated portfolio manager and trade execution platform. It scrapes real-time news, polls price indicators, runs weighted score rankings, resolves growth catalysts using Gemini, and routes executions to the Upstox API.
+## 🖥️ System Mockup Landing Page
 
 ```
-       [RSS News Feeds]        [Historical Prices]
-              │                         │
-              ▼                         ▼
-      ┌───────────────┐         ┌───────────────┐
-      │Sentiment Agent│         │Technical Agent│
-      └───────┬───────┘         └───────┬───────┘
-              │                         │
-              └───────────┬─────────────┘
-                          ▼
-                  ┌───────────────┐
-                  │ Scorer Agent  │ (Weighted Rank Aggregation)
-                  └───────┬───────┘
-                          ▼
-                  ┌───────────────┐
-                  │Leaderboard    │ (Rankings Current Collection)
-                  └───────┬───────┘
-                          ▼
-                  ┌───────────────┐
-                  │Risk Engine    │ (Exposure Check & Cash Allocation)
-                  └───────┬───────┘
-                          ▼
-              ┌───────────────────────┐
-              │    Execution Layer    │
-              ├───────────┬───────────┤
-              │           │           │
-              ▼           ▼           ▼
-           [ OFF ]    [CONFIRM]    [ AUTO ]
-              │           │           │
-           (Ignore)  (Telegram Approval) (Direct Trade API)
+┌────────────────────────────────────────────────────────────────────────┐
+│  AORA AI ── Stock Leaderboard                                  [⚙️ Mode]│
+├────────────────────────────────────────────────────────────────────────┤
+│  [Market Regime: Bearish]   [Nifty 50: 22,140.20]   [Nifty Bank: 47,210]│
+├────────────────────────────────────────────────────────────────────────┤
+│  Leaderboard                                                           │
+│  Rank  Ticker   Score   Price      Change   Sentiment   AI Explanation │
+│  ────  ──────   ─────   ─────      ──────   ─────────   ────────────── │
+│  #1    TCS      8.75    ₹3,850.50  +1.25%   🟢 Bullish  Strong cash fl…│
+│  #2    INFY     8.42    ₹1,420.00  +0.85%   🟢 Bullish  RSI rebound at…│
+│  #3    RELIANCE 7.95    ₹2,910.15  -0.30%   🟡 Neutral  Support area h…│
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│  Broker status: CONNECTED (2h 15m age)         [Reconnect Broker]     │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Platform Architecture
+## 📊 Flowcharts & Topologies
 
-AORA utilizes a decoupled, serverless system topology where the Python FastAPI engine is wrapped using `a2wsgi` middleware to run inside Firebase Cloud Functions.
+### 1. Overall System Architecture
+Decoupled multi-tier cloud and serverless configuration:
 
 ```mermaid
 graph TD
     subgraph Client Application
-        ReactWeb["React + Vite Frontend (Web/Localhost)"]
+        ReactWeb["React + Vite Frontend (Vercel)"]
     end
 
-    subgraph Firebase cloud services
-        Firestore[("Firestore Database\n(Stocks, Orders, Runtime State)")]
+    subgraph Firebase Cloud Services
+        Firestore[("Firestore Database\n(Collections: stocks, rankings, config)")]
         CloudFunctions["Firebase Cloud Functions\n(FastAPI ASGI via a2wsgi)"]
     end
 
@@ -88,103 +73,241 @@ graph TD
 
 ---
 
-## 3. Directory Layout
+### 2. Cooperative AI Agent Pipeline
+Sequentially chained pipeline executing every 15 minutes:
 
-The project structure is organized as follows:
-
-```
-├── .firebaserc
-├── firebase.json
-├── deploy.ps1
-├── backend/
-│   ├── main.py (Cloud Functions entrypoint)
-│   ├── requirements.txt (Dependencies list)
-│   ├── runtime.txt
-│   ├── .python-version (Python 3.12 pin)
-│   ├── app/
-│   │   ├── main.py (FastAPI Routes & Middlewares)
-│   │   ├── config.py (Pydantic Settings)
-│   │   ├── db.py (Firestore client initialization)
-│   │   ├── scheduler.py (Automation Cron loops)
-│   │   ├── agents/
-│   │   │   ├── news_collector.py (Google News RSS scrapes)
-│   │   │   ├── sentiment.py (Gemini news sentiment analysis)
-│   │   │   ├── technical.py (Technical indicators poller)
-│   │   │   └── ranking.py (Valuation rankings aggregator)
-│   │   └── services/
-│   │       ├── risk_engine.py (Exposures & Limits validators)
-│   │       ├── live_execution.py (Upstox trade routers)
-│   │       ├── health_monitor.py (Token checks & safety breakers)
-│   │       └── upstox_trading.py (Upstox client SDK wrappers)
-│   └── test_auth_notifications.py (Unit tests for rate limiters)
-└── frontend/
-    ├── package.json
-    ├── vite.config.js
-    └── src/
-        ├── App.tsx
-        └── components/
-            ├── PortfolioIntelligence.tsx (Cash dials & AI recommendations)
-            └── LiveExecution.tsx (Trade logs & Risk configurations)
+```mermaid
+graph LR
+    Collector["1. News Collector\n(Scrapes RSS Feeds)"] -->|Matched News| Sentiment["2. Sentiment Agent\n(Gemini Sentiment Math)"]
+    Sentiment -->|Scores & Trends| Technical["3. Technical Agent\n(RSI, MACD Poller)"]
+    Technical -->|Price & Indicators| Scorer["4. Scorer Agent\n(Weighted Rank Aggregation)"]
+    Scorer -->|Leaderboard rankings| Explanation["5. Explanation Agent\n(Gemini explanation compiler)"]
+    Explanation -->|Investment Memos| Alert["6. Alert Agent\n(Fires Telegram Alerts)"]
+    Alert -->|Notification Telemetry| Learning["7. Learning Agent\n(Weight Optimization Loops)"]
 ```
 
 ---
 
-## 4. API Endpoints Catalog
+### 3. Broker Authentication Flow
+Redundancy-filtered Upstox v2 OAuth validation sequence:
 
-Here is a summary of primary routes exposed by the FastAPI server. See the [API Guide](./docs/api_reference.md) for JSON schemas.
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Upstox
+    participant Firestore
 
-| Method | Endpoint | Description | Cache Status |
-|---|---|---|---|
-| `GET` | `/api/top10` | Ranked stock leaderboard | Cached (15 mins) |
-| `GET` | `/api/stocks/{ticker}` | Indicators & news detail | Database Read |
-| `GET` | `/api/stocks/{ticker}/research` | DCF & Catalysts Memo | Stale-Check & Compile |
-| `GET` | `/api/upstox/auth-status` | Dynamic OAuth credentials age | Database Read |
-| `GET` | `/api/upstox/login` | Redirect to Upstox Dialog | Dynamic |
-| `GET` | `/api/upstox/callback` | Exch Code for Access Token | Write & Redirect |
-| `POST`| `/api/trading/buy` | Execute buy suggestions | Risk Validated |
-| `GET` | `/api/live/approve` | Approve order from Telegram | Trigger Execution |
+    User->>Frontend: Click "Connect Broker"
+    Frontend->>Backend: GET /api/upstox/login
+    Backend->>Upstox: Redirect User to Auth Dialog
+    User->>Upstox: Authorize Credentials
+    Upstox->>Backend: Callback Redirect with Code
+    Backend->>Backend: Check duplicate processing code
+    Backend->>Upstox: POST Exchange Code for Token
+    Upstox-->>Backend: Access Token Payload
+    Backend->>Upstox: Validate E2E (Profile, Holdings, Funds)
+    Upstox-->>Backend: 200 OK Results
+    Backend->>Firestore: Store Token (config/upstox, config/upstox_auth)
+    Backend->>Firestore: Reset Runtime State (config/runtime_state)
+    Backend->>Firestore: Enable live_trading_enabled (live_trading/config)
+    Backend->>Frontend: Redirect to Dashboard
+```
 
 ---
 
-## 5. Quickstart Installation
+### 4. Background Scheduler Flow
+AP scheduler and Cron intervals running in the background:
 
-Detailed configurations can be found in the [Installation Guide](./docs/installation.md).
+```mermaid
+graph TD
+    Init["init_scheduler()"] --> Job1["15-Min: run_agent_pipeline_job()\n(Scans news, prices, ranks, AI summaries)"]
+    Init --> Job2["Sun 09:00 IST: send_weekly_report()\n(AI macro summary)"]
+    Init --> Job3["Mon-Fri 08:45 IST: run_health_checks()\n(Validates token & system status)"]
+    Init --> Job4["Mon-Fri 09:15 IST: execute_watchlist_auto_scan()\n(Watchlist mock buys)"]
+    Init --> Job5["Mon-Fri 09:15-15:30 (Every 30 mins): run_live_and_paper_automation()\n(Watchlist buys & SL monitoring)"]
+    Init --> Job6["Mon-Fri 15:30 IST: run_end_of_day_report()\n(Trade summary stats)"]
+```
 
-### 5.1 Backend Local Setup
-```bash
+---
+
+### 5. Firestore Database Schema
+NoSQL document schemas and config layouts:
+
+```mermaid
+classDiagram
+    class Config {
+        upstox: accessToken
+        upstox_status: authentication_status
+        runtime_state: upstox_connected, expiry_notification_sent, last_notification
+        risk_rules: max_portfolio_exposure_pct, max_sector_exposure_pct
+    }
+    class Stocks {
+        company_name
+        sector
+        price
+        rsi
+        macd
+        trend
+    }
+    class News {
+        ticker
+        title
+        sentiment_score
+        sentiment_classification
+    }
+    class Rankings {
+        current: top_10
+    }
+    class PaperPositions {
+        ticker
+        quantity
+        entry_price
+        stop_loss
+        take_profit
+    }
+```
+
+---
+
+### 6. API Routing Diagram
+Decoupled endpoints organization:
+
+```mermaid
+graph TD
+    FastAPI["FastAPI Web Server"]
+    FastAPI --> DataProc["/api/fetch-news<br>/api/fetch-prices<br>/api/admin/cleanup"]
+    FastAPI --> Dashboard["/api/top10<br>/api/market-summary<br>/api/stocks/{ticker}"]
+    FastAPI --> Paper["/api/paper/portfolio<br>/api/paper/positions<br>/api/paper/trades"]
+    FastAPI --> Trading["/api/trading/buy<br>/api/trading/sell<br>/api/trading/risk-rules"]
+    FastAPI --> Auth["/api/upstox/auth-status<br>/api/upstox/login<br>/api/upstox/callback"]
+```
+
+---
+
+### 7. Deployment Pipeline
+Vercel + Google Cloud Run serverless build and deploy:
+
+```mermaid
+graph LR
+    LocalCode["Local Codebase"] -->|deploy.ps1| FrontendDeploy["npm run build && vercel --prod\n(Frontend Vercel Hosting)"]
+    LocalCode -->|deploy.ps1| BackendDeploy["gcloud run deploy aora-backend --source .\n(GCP Cloud Run Container)"]
+```
+
+---
+
+### 8. Trading Workflow & Safeguards
+Rule validations and risk checkers sequence:
+
+```mermaid
+graph TD
+    Trigger["Order execution trigger"] --> SafetyCheck["1. check_execution_safety()"]
+    SafetyCheck --> ReviewCheck["2. Gemini pre-flight AI review"]
+    ReviewCheck --> RulesCheck["3. validate_portfolio_risk_rules()"]
+    RulesCheck --> ModeBranch{"Execution Mode"}
+    ModeBranch -->|AUTO| DirectTrade["Route Order to Upstox API"]
+    ModeBranch -->|CONFIRM| TGAlert["Send approve/reject link Telegram notification"]
+    ModeBranch -->|OFF| Skip["Abort Trade Placement"]
+```
+
+---
+
+## 🛠️ Multi-OS Setup Checklist
+
+See the [Installation Guide](./docs/installation.md) for full configurations.
+
+### Windows (PowerShell)
+```powershell
+# Navigate to backend
 cd backend
 python -m venv venv
-# Windows: .\venv\Scripts\Activate.ps1 | Unix: source venv/bin/activate
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+cp .env.example .env
+# Place your serviceAccountKey.json inside backend/
+
+# Start development
 python -m uvicorn app.main:app --port 8000 --reload
 ```
 
-### 5.2 Frontend Local Setup
+### Linux & macOS
 ```bash
-cd frontend
-npm install
-npm run dev
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+
+python3 -m uvicorn app.main:app --port 8000 --reload
 ```
 
 ---
 
-## 6. Execution Safety & Cooldown Rules
+## 🔐 Environment Variables (.env)
 
-* **Single Message Limit**: During token expiration events, AORA writes state flags to Firestore (`config/runtime_state`). It dispatches exactly **ONE** Telegram message to avoid notification floods.
-* **24-Hour Cooldown**: A strict 24-hour rate limit check prevents multiple notification alerts even if credentials expire and reconnect loops cycle repeatedly.
-* **Leverage Circuit Breaker**: Live trading is paused immediately upon token expiration, while paper trading and analytics loops continue. When the user reconnects, flags are reset and live trading resumes.
+See the [Installation Guide](./docs/installation.md) for details.
+
+| Variable Name | Required | Default / Example | Purpose |
+|---|---|---|---|
+| `GEMINI_API_KEY` | **Yes** | `AIzaSy...` | API key to authorize Gemini 2.5 Flash models |
+| `TELEGRAM_BOT_TOKEN` | No | `12345:AA...` | Bot token provided by @BotFather |
+| `TELEGRAM_CHAT_ID` | No | `-10012...` | Chat identifier for alert routing |
+| `UPSTOX_API_KEY` | No | `prod-api-key` | Broker API key |
+| `UPSTOX_SECRET` | No | `prod-secret` | Broker client secret |
+| `UPSTOX_REDIRECT_URI` | No | `http://localhost:8000/api/upstox/callback` | OAuth redirect URI |
+| `DASHBOARD_URL` | No | `http://localhost:3000` | Redirect portal link for authentication callbacks |
 
 ---
 
-## 7. Future Roadmap
+## 🚀 REST API Usage Examples
 
-- [ ] **Multi-Broker Routing**: Support Zerodha Kite and Angel One wrappers.
-- [ ] **Advanced Backtester UI**: Interactive chart parameters for custom strategy definitions.
-- [ ] **On-Device LLM Fallback**: Run lightweight localized models (e.g. Gemma 2B) for basic offline scans.
-- [ ] **Capacitor Mobile Build**: Cross-platform configurations mapping to Android devices.
+See the [API Guide](./docs/api_reference.md) for payload models.
+
+### Fetch Scored Top 10 Leaderboard
+```bash
+curl -X GET "http://localhost:8000/api/top10" -H "accept: application/json"
+```
+
+### Submit Live Buy Order
+```bash
+curl -X POST "http://localhost:8000/api/trading/buy" \
+     -H "Content-Type: application/json" \
+     -d '{"ticker": "INFY", "quantity": 10, "price": 1420.00, "transaction_type": "BUY"}'
+```
 
 ---
 
-## 8. License
+## 🛠️ Troubleshooting Manual
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+### 1. Spam alert loops on expired broker sessions
+* **Symptom**: Telegram bot continuously notifies that Upstox session has expired.
+* **Fix**: The system has been upgraded to write authentication states in `config/runtime_state`. If the session is invalid, `expiry_notification_sent` becomes `True` to block additional messages, respecting a 24-hour rate limit. Reconnect at `/api/upstox/login` to reset the flag.
+
+### 2. Available Margin Deficiency
+* **Symptom**: Simulated or live trades reject with margin alerts.
+* **Fix**: The Risk Engine checks your available cash balance before placing trades. Review the rules or adjust your trade sizes inside the **Risk Configuration Editor** card panel in the UI.
+
+---
+
+## 💳 Cost Optimization & API Caching
+
+* **Dynamic Cache Layer**: Leaders and scores feeds are kept cached memory-wide for 15 minutes. This reduces database reads when multiple tabs are open.
+* **Static Database Reads**: Leaderboard rankings reads point directly to the static `rankings/current` collection instead of executing the full 7-agent pipeline on each page load.
+* **Gemini Throttle**: News sentiment analysis compiles matches and checks token counts before running to minimize Google Generative AI quota consumption.
+
+---
+
+## 🤝 Contribution Guide
+
+See the [Developer Guide](./docs/developer_guide.md) for extension manuals.
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/amazing-feature`.
+3. Verify that all tests pass: `python -m unittest backend/test_auth_notifications.py`.
+4. Commit your changes and open a Pull Request.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
